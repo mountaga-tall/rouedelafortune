@@ -403,11 +403,8 @@
                 spinMainBtn.classList.remove('opacity-60', 'cursor-not-allowed');
                 spinCenterBtn.disabled = false;
                 spinCenterBtn.classList.add('hub-pulse');
-                const status = document.getElementById('registrationStatus');
-                if (status) {
-                    status.textContent = error.message || "Le jeu est momentanément indisponible.";
-                    status.classList.remove('is-success');
-                }
+                const status = document.getElementById('gameStatus');
+                if (status) status.textContent = error.message || "Le jeu est momentanément indisponible.";
             }
         }
 
