@@ -268,3 +268,14 @@
     .registration-fields { grid-template-columns: 1fr; }
     .registration-card { border-radius: 22px; }
 }
+
+.game-status {
+    min-height: 18px;
+    margin: 10px auto 0;
+    max-width: 380px;
+    padding: 0 12px;
+    color: #fca5a5;
+    font-size: 12px;
+    line-height: 1.5;
+    text-align: center;
+}
