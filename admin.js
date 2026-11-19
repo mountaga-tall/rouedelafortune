@@ -153,7 +153,9 @@ document.getElementById("logoutButton").addEventListener("click", async () => {
 });
 
 function csvValue(value) {
-  const text = value == null ? "" : String(value);
+  let text = value == null ? "" : String(value);
+  // Empêche l'exécution de formules lors de l'ouverture du CSV dans un tableur.
+  if (/^[\\s\\t\\r]*[=+@-]/.test(text)) text = "'" + text;
   return '"' + text.replace(/"/g, '""') + '"';
 }
 
