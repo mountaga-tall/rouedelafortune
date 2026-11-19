@@ -18,6 +18,57 @@
 <body class="min-h-screen flex flex-col justify-between items-center p-3 sm:p-6 relative">
     <div class="ambient-backdrop" aria-hidden="true"></div>
 
+    <!-- ACCÈS AU JEU : inscription du participant -->
+    <section id="registrationGate" class="registration-gate" aria-labelledby="registrationTitle">
+        <div class="registration-card">
+            <img class="registration-logo" src="./LOGO%20EL%20PATRON%20ROUGE.png" alt="Logo EL PATRÓN">
+            <p class="registration-eyebrow">Bienvenue chez EL PATRÓN</p>
+            <h2 id="registrationTitle" class="registration-title">La chance vous attend !</h2>
+            <p class="registration-intro">Inscrivez-vous pour accéder à la roue et retrouver votre historique de participation.</p>
+
+            <form id="registrationForm" class="registration-form" novalidate>
+                <div class="registration-fields">
+                    <label class="registration-field">
+                        <span>Prénom</span>
+                        <input id="playerFirstName" name="firstName" type="text" autocomplete="given-name" maxlength="80" placeholder="Votre prénom" required>
+                    </label>
+                    <label class="registration-field">
+                        <span>Nom</span>
+                        <input id="playerLastName" name="lastName" type="text" autocomplete="family-name" maxlength="80" placeholder="Votre nom" required>
+                    </label>
+                    <label class="registration-field">
+                        <span>Téléphone</span>
+                        <input id="playerPhone" name="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="24" placeholder="07 00 00 00 00" required>
+                    </label>
+                    <label class="registration-field">
+                        <span>Adresse e-mail</span>
+                        <input id="playerEmail" name="email" type="email" inputmode="email" autocomplete="email" maxlength="254" placeholder="vous@exemple.com" required>
+                    </label>
+                </div>
+
+                <label class="registration-consent">
+                    <input id="privacyConsent" name="privacyConsent" type="checkbox" required>
+                    <span>J'accepte que EL PATRÓN utilise mes coordonnées pour gérer mon accès au jeu, enregistrer mes participations et valider mes éventuels cadeaux. J'ai lu la <a href="./privacy.html" target="_blank" rel="noopener">notice de confidentialité</a>.</span>
+                </label>
+
+                <label class="registration-consent registration-consent-optional">
+                    <input id="marketingConsent" name="marketingConsent" type="checkbox">
+                    <span>J'accepte de recevoir les actualités et offres de EL PATRÓN par e-mail ou téléphone. (Facultatif)</span>
+                </label>
+
+                <div class="registration-honeypot" aria-hidden="true">
+                    <label>Ne pas remplir<input name="website" type="text" tabindex="-1" autocomplete="off"></label>
+                </div>
+
+                <p id="registrationStatus" class="registration-status" role="status" aria-live="polite"></p>
+                <button id="registrationSubmit" class="registration-submit" type="submit">
+                    <span>🎯</span> Accéder à la roue
+                </button>
+            </form>
+            <p class="registration-footnote">Vos coordonnées ne sont pas affichées aux autres joueurs.</p>
+        </div>
+    </section>
+
     <!-- En-tête aux couleurs EL PATRÓN -->
     <header class="w-full max-w-4xl flex items-center justify-between z-10 mb-2">
         <div class="flex items-center gap-3">
@@ -147,6 +198,7 @@
     <!-- Pied de page -->
     <footer class="w-full max-w-4xl text-center text-xs text-white/50 py-1.5 z-10">
         EL PATRÓN - RESTAURANT - CAFÉ • Présentez l'écran de gain à votre serveur
+        <div class="mt-1 flex items-center justify-center gap-3"><span id="playerWelcome" class="text-[11px] text-amber-200/70"></span><a class="text-[11px] underline underline-offset-2 text-white/45 hover:text-amber-200" href="./admin.html">Espace administration</a></div>
     </footer>
 
     <!-- MODALE DE RÉSULTAT -->
