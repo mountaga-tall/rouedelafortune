@@ -150,3 +150,121 @@
             background: rgba(200, 29, 17, 0.65);
             border-radius: 9999px;
         }
+
+
+/* Formulaire d'accès participant */
+.registration-gate {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow-y: auto;
+    padding: 18px;
+    background: rgba(7, 2, 2, .88);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+}
+.registration-gate.is-hidden { display: none; }
+.registration-card {
+    position: relative;
+    width: min(100%, 520px);
+    margin: auto;
+    padding: clamp(22px, 5vw, 36px);
+    border: 1px solid rgba(251, 191, 36, .45);
+    border-radius: 28px;
+    background:
+        radial-gradient(circle at 50% 0%, rgba(200, 29, 17, .2), transparent 42%),
+        linear-gradient(155deg, rgba(39, 12, 9, .98), rgba(12, 5, 5, .99));
+    box-shadow: 0 28px 90px rgba(0, 0, 0, .72), 0 0 45px rgba(200, 29, 17, .17);
+}
+.registration-logo {
+    display: block;
+    width: 82px;
+    height: 82px;
+    object-fit: contain;
+    margin: 0 auto 14px;
+    padding: 5px;
+    border-radius: 20px;
+    border: 2px solid rgba(251, 191, 36, .75);
+    background: white;
+    box-shadow: 0 0 30px rgba(245, 158, 11, .2);
+}
+.registration-eyebrow {
+    margin: 0 0 6px;
+    color: #fbbf24;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .25em;
+    text-align: center;
+    text-transform: uppercase;
+}
+.registration-title {
+    margin: 0;
+    color: white;
+    font-family: 'Oswald', sans-serif;
+    font-size: clamp(29px, 7vw, 40px);
+    line-height: 1.1;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: .035em;
+}
+.registration-intro {
+    max-width: 390px;
+    margin: 11px auto 24px;
+    color: rgba(255,255,255,.69);
+    font-size: 13px;
+    line-height: 1.6;
+    text-align: center;
+}
+.registration-form { display: grid; gap: 15px; }
+.registration-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+.registration-field { display: grid; gap: 6px; color: #f6d68b; font-size: 11px; font-weight: 800; letter-spacing: .04em; }
+.registration-field input {
+    width: 100%;
+    min-width: 0;
+    padding: 12px 13px;
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 12px;
+    outline: none;
+    color: white;
+    background: rgba(255,255,255,.07);
+    font: 500 14px 'Outfit', sans-serif;
+    transition: border-color .2s, box-shadow .2s, background .2s;
+}
+.registration-field input::placeholder { color: rgba(255,255,255,.35); }
+.registration-field input:focus { border-color: #fbbf24; background: rgba(255,255,255,.1); box-shadow: 0 0 0 3px rgba(245,158,11,.13); }
+.registration-consent {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    color: rgba(255,255,255,.72);
+    font-size: 11px;
+    line-height: 1.55;
+}
+.registration-consent input { width: 16px; height: 16px; flex: 0 0 auto; margin-top: 1px; accent-color: #c81d11; }
+.registration-consent a { color: #fcd34d; text-decoration: underline; text-underline-offset: 2px; }
+.registration-consent-optional { padding-top: 11px; border-top: 1px solid rgba(255,255,255,.1); }
+.registration-submit {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    width: 100%; padding: 15px 18px; border: 1px solid rgba(253,230,138,.7); border-radius: 14px;
+    color: white; background: linear-gradient(100deg, #ef4444, #c81d11 55%, #991b1b);
+    box-shadow: 0 10px 30px rgba(200,29,17,.35);
+    font: 800 15px 'Outfit', sans-serif; letter-spacing: .08em; text-transform: uppercase;
+    cursor: pointer; transition: transform .18s, filter .18s;
+}
+.registration-submit:hover { filter: brightness(1.12); transform: translateY(-1px); }
+.registration-submit:disabled { opacity: .55; cursor: wait; transform: none; }
+.registration-status { min-height: 18px; margin: 0; color: #fca5a5; font-size: 12px; text-align: center; }
+.registration-status.is-success { color: #86efac; }
+.registration-footnote { margin: 14px 0 0; color: rgba(255,255,255,.35); font-size: 10px; text-align: center; }
+.registration-honeypot { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+@media (max-width: 440px) {
+    .registration-fields { grid-template-columns: 1fr; }
+    .registration-card { border-radius: 22px; }
+}
