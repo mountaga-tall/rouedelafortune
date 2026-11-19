@@ -1,6 +1,6 @@
-import { ensureSchema, getSql } from "./_lib/db.js";
-import { getCustomerId } from "./_lib/auth.js";
-import { json, methodNotAllowed } from "./_lib/http.js";
+import { ensureSchema, getSql } from "../lib/server/db.js";
+import { getCustomerId } from "../lib/server/auth.js";
+import { json, methodNotAllowed } from "../lib/server/http.js";
 
 export default async function handler(req, res) {
   if (req.method !== "GET") return methodNotAllowed(res, ["GET"]);
