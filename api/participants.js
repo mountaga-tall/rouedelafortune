@@ -1,6 +1,6 @@
-import { ensureSchema, getSql } from "./_lib/db.js";
-import { json, methodNotAllowed, originAllowed, readJson } from "./_lib/http.js";
-import { setCustomerSession } from "./_lib/auth.js";
+import { ensureSchema, getSql } from "../lib/server/db.js";
+import { json, methodNotAllowed, originAllowed, readJson } from "../lib/server/http.js";
+import { setCustomerSession } from "../lib/server/auth.js";
 
 const PRIVACY_NOTICE_VERSION = "2026-11-19-v1";
 
