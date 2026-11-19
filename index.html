@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EL PATRÓN - Roue de la Fortune</title>
+    <!-- Tailwind CSS pour un design responsive moderne -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts : Outfit & Oswald pour un style affirmé assorti au logo EL PATRÓN -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Bibliothèque Canvas Confetti pour célébrer les gains -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --patron-red: #C81D11;
+            --patron-red-dark: #8E1109;
+            --patron-gold: #F59E0B;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: radial-gradient(circle at top center, #2b0907 0%, #140504 55%, #090303 100%);
+            color: #ffffff;
+            overflow-x: hidden;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .font-patron {
+            font-family: 'Oswald', sans-serif;
+            letter-spacing: 0.04em;
+        }
+
+        /* Halo lumineux rouge et or derrière la roue */
+        .wheel-glow {
+            box-shadow:
+                0 0 65px rgba(200, 29, 17, 0.45),
+                0 0 25px rgba(245, 158, 11, 0.25),
+                inset 0 0 28px rgba(0, 0, 0, 0.65);
+        }
+
+        /* Animation du pointeur lorsqu'un clou passe */
+        @keyframes pointerTick {
+            0% { transform: translateX(-50%) rotate(0deg); }
+            40% { transform: translateX(-50%) rotate(-24deg); }
+            100% { transform: translateX(-50%) rotate(0deg); }
+        }
+
+        .pointer-animate {
+            animation: pointerTick 0.12s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        /* Pulsation subtile du médaillon central EL PATRÓN */
+        @keyframes hubPulse {
+            0%, 100% {
+                transform: translate(-50%, -50%) scale(1);
+                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.75), 0 0 0 0 rgba(200, 29, 17, 0.65);
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.035);
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 0 12px rgba(200, 29, 17, 0);
+            }
+        }
+
+        .hub-pulse {
+            animation: hubPulse 2.6s infinite;
+        }
+
+        /* Apparition de la modale */
+        @keyframes modalPop {
+            0% { opacity: 0; transform: scale(0.86) translateY(18px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .modal-enter {
+            animation: modalPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        /* Scrollbar discrète */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(200, 29, 17, 0.65);
+            border-radius: 9999px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between items-center p-3 sm:p-6 relative">
+
+    <!-- En-tête aux couleurs EL PATRÓN -->
+    <header class="w-full max-w-4xl flex items-center justify-between z-10 mb-2">
+        <div class="flex items-center gap-3">
+            <!-- Petit badge blanc avec mini-broche rouge EL PATRÓN -->
+            <div class="w-11 h-11 sm:w-13 sm:h-13 rounded-2xl bg-white flex items-center justify-center shadow-lg border-2 border-[#C81D11] p-1 shrink-0">
+                <svg viewBox="0 0 120 120" class="w-full h-full" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <!-- Broche centrale -->
+                    <polygon points="60,6 63,26 57,26" fill="#C81D11"/>
+                    <rect x="57" y="84" width="6" height="22" fill="#C81D11"/>
+                    <ellipse cx="60" cy="96" rx="22" ry="3" fill="#C81D11"/>
+                    <!-- Flamme gauche -->
+                    <path d="M43 85 C27 78, 22 60, 27 45 C29 53, 33 55, 33 47 C32 37, 37 29, 41 25 C39 33, 42 38, 44 35 Z" fill="#C81D11"/>
+                    <!-- Broche de viande -->
+                    <path d="M42 28 C42 22, 78 22, 78 28 L74 80 C74 85, 46 85, 46 80 Z" fill="#C81D11"/>
+                    <path d="M45 36 Q60 33 75 36 M46 46 Q60 49 74 46 M47 58 Q60 55 73 58 M48 69 Q60 72 72 69" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+                </svg>
+            </div>
+            <div>
+                <h1 class="font-patron text-2xl sm:text-3xl font-bold text-white tracking-wider leading-none uppercase">
+                    EL <span class="text-[#EF4444]">PATRÓN</span>
+                </h1>
+                <p class="text-[11px] sm:text-xs font-bold tracking-[0.22em] text-amber-300/90 uppercase mt-1">
+                    RESTAURANT - CAFÉ • ROUE DE LA FORTUNE
+                </p>
+            </div>
+        </div>
+
+        <!-- Boutons d'action rapides : Importer PNG local, Son, Historique -->
+        <div class="flex items-center gap-2">
+            <!-- Bouton optionnel pour charger le fichier image local LOGO EL PATRON ROUGE.png si souhaité -->
+            <label for="customLogoInput" title="Charger un fichier logo PNG personnalisé" class="p-2.5 sm:p-3 rounded-2xl bg-white/10 hover:bg-white/20 active:scale-95 transition border border-white/15 text-white/90 flex items-center gap-1.5 shadow-md cursor-pointer">
+                <span class="text-base sm:text-lg">🖼️</span>
+                <span class="hidden md:inline text-xs font-semibold uppercase tracking-wider">Logo</span>
+            </label>
+            <input id="customLogoInput" type="file" accept="image/*" class="hidden">
+
+            <button id="soundToggleBtn" aria-label="Activer ou couper le son" class="p-2.5 sm:p-3 rounded-2xl bg-white/10 hover:bg-white/20 active:scale-95 transition border border-white/15 text-white flex items-center gap-2 shadow-md cursor-pointer">
+                <span id="soundIcon" class="text-base sm:text-lg">🔊</span>
+                <span id="soundText" class="hidden sm:inline text-xs font-semibold uppercase tracking-wider">Son</span>
+            </button>
+
+            <button id="staffDrawerBtn" aria-label="Historique des tirages" class="p-2.5 sm:p-3 rounded-2xl bg-white/10 hover:bg-white/20 active:scale-95 transition border border-white/15 text-white flex items-center gap-2 shadow-md cursor-pointer">
+                <span class="text-base sm:text-lg">📋</span>
+                <span class="hidden sm:inline text-xs font-semibold uppercase tracking-wider">Suivi</span>
+                <span id="historyBadge" class="bg-[#C81D11] text-white text-xs font-extrabold px-2 py-0.5 rounded-full border border-white/30">0</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Section Principale : La Roue de la Fortune -->
+    <main class="flex-1 w-full max-w-3xl flex flex-col items-center justify-center my-2 sm:my-3 relative z-10">
+
+        <!-- Conteneur responsive de la roue -->
+        <div id="wheelContainer" class="relative w-[88vw] h-[88vw] max-w-[460px] max-h-[460px] sm:max-w-[520px] sm:max-h-[520px] flex items-center justify-center">
+
+            <!-- Pointeur supérieur (Flèche dorée et rouge) -->
+            <div id="wheelPointer" style="transform-origin: 50% 18%;" class="absolute -top-4 sm:-top-5 left-1/2 -translate-x-1/2 z-30 pointer-events-none drop-shadow-[0_6px_10px_rgba(0,0,0,0.75)]">
+                <svg width="50" height="60" viewBox="0 0 50 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M25 58L4 18C4 8.05887 13.402 2 25 2C36.598 2 46 8.05887 46 18L25 58Z" fill="url(#pointerPatronGrad)" stroke="#FFFFFF" stroke-width="3"/>
+                    <circle cx="25" cy="17" r="6.5" fill="#C81D11" stroke="#FEF08A" stroke-width="2"/>
+                    <defs>
+                        <linearGradient id="pointerPatronGrad" x1="25" y1="2" x2="25" y2="58" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#FDE047"/>
+                            <stop offset="0.55" stop-color="#F59E0B"/>
+                            <stop offset="1" stop-color="#B45309"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+            </div>
+
+            <!-- Couronne extérieure rouge & or EL PATRÓN + Canvas -->
+            <div class="w-full h-full rounded-full p-2.5 sm:p-3.5 bg-gradient-to-b from-[#EF4444] via-[#C81D11] to-[#7F1D1D] border-2 border-amber-300/70 wheel-glow relative flex items-center justify-center shadow-2xl">
+                <canvas id="wheelCanvas" class="w-full h-full rounded-full block cursor-pointer"></canvas>
+
+                <!-- MÉDAILLON CENTRAL BLANC AVEC LOGO EL PATRÓN - RESTAURANT - CAFÉ -->
+                <button id="spinCenterBtn" aria-label="Tourner la roue EL PATRÓN" class="hub-pulse absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[31%] h-[31%] min-w-[104px] min-h-[104px] max-w-[156px] max-h-[156px] rounded-full bg-white border-[4px] sm:border-[5px] border-[#C81D11] shadow-[0_8px_28px_rgba(0,0,0,0.8)] flex items-center justify-center p-1.5 sm:p-2 transition active:scale-95 z-20 cursor-pointer overflow-hidden">
+                    
+                    <!-- Image chargée si LOGO EL PATRON ROUGE.png est présent dans le dossier ou sélectionné -->
+                    <img id="hubLogoImg" src="LOGO EL PATRON ROUGE.png" alt="Logo EL PATRÓN Restaurant - Café" class="w-full h-full object-contain hidden pointer-events-none select-none" />
+
+                    <!-- Reproduction vectorielle haute fidélité du logo EL PATRÓN - RESTAURANT - CAFÉ -->
+                    <svg id="hubLogoSvg" viewBox="0 0 220 220" class="w-full h-full pointer-events-none select-none" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Pointe supérieure de la broche -->
+                        <polygon points="112,12 117,44 107,44" fill="#C81D11"/>
+
+                        <!-- Flamme rouge à gauche de la broche -->
+                        <path d="M84 152 C53 144, 42 116, 48 92 C52 103, 58 106, 58 94 C56 76, 65 62, 72 54 C69 68, 74 75, 78 70 C74 84, 78 96, 84 102 Z" fill="#C81D11"/>
+                        <path d="M68 65 C62 56, 63 45, 69 38 C68 46, 71 52, 74 56 Z" fill="#C81D11"/>
+
+                        <!-- Silhouette de la broche de chawarma -->
+                        <path d="M77 52 C77 41, 147 41, 147 52 L141 142 C141 151, 83 151, 83 142 Z" fill="#C81D11"/>
+
+                        <!-- Textures blanches de la viande sur la broche -->
+                        <path d="M81 62 Q105 56 143 63" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" fill="none"/>
+                        <path d="M80 74 Q112 79 144 73" stroke="#FFFFFF" stroke-width="2.8" stroke-linecap="round" fill="none"/>
+                        <path d="M82 126 Q112 122 140 127" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" fill="none"/>
+                        <path d="M84 137 Q112 142 138 136" stroke="#FFFFFF" stroke-width="2.8" stroke-linecap="round" fill="none"/>
+
+                        <!-- Axe inférieur et socle de la broche -->
+                        <rect x="109" y="147" width="6" height="33" fill="#C81D11"/>
+                        <ellipse cx="112" cy="161" rx="34" ry="4" fill="#C81D11"/>
+                        <polygon points="109,179 115,179 112,188" fill="#C81D11"/>
+
+                        <!-- Typographie centrale "EL" en blanc avec contour rouge -->
+                        <text x="112" y="96" text-anchor="middle" font-family="Oswald, Impact, sans-serif" font-weight="700" font-size="33" fill="#FFFFFF" stroke="#C81D11" stroke-width="4.5" paint-order="stroke" letter-spacing="1.5">EL</text>
+
+                        <!-- Typographie centrale "PATRÓN" en blanc avec contour rouge -->
+                        <text x="112" y="124" text-anchor="middle" font-family="Oswald, Impact, sans-serif" font-weight="700" font-size="33" fill="#FFFFFF" stroke="#C81D11" stroke-width="5" paint-order="stroke" letter-spacing="1">PATRÓN</text>
+
+                        <!-- Sous-titre noir "RESTAURANT - CAFÉ" -->
+                        <text x="110" y="203" text-anchor="middle" font-family="Outfit, Arial, sans-serif" font-weight="800" font-size="13.5" fill="#111111" letter-spacing="1.8">RESTAURANT - CAFÉ</text>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Bouton d'action principal sous la roue -->
+        <div class="mt-5 sm:mt-7 w-full max-w-sm px-4">
+            <button id="spinMainBtn" class="w-full py-3.5 sm:py-4 px-6 rounded-2xl bg-gradient-to-r from-[#EF4444] via-[#C81D11] to-[#991B1B] hover:from-[#F87171] hover:to-[#C81D11] text-white font-extrabold text-lg sm:text-xl uppercase tracking-wider shadow-[0_10px_30px_rgba(200,29,17,0.55)] border-2 border-amber-300/80 transition transform active:scale-95 flex items-center justify-center gap-3 cursor-pointer">
+                <span>🎯</span>
+                <span>TOURNER LA ROUE</span>
+            </button>
+        </div>
+
+        <!-- Légende des 4 lots gourmands à gagner -->
+        <div class="mt-4 flex flex-wrap justify-center gap-2 max-w-xl px-2">
+            <span class="px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/50 text-emerald-200 text-xs font-semibold">🥤 Un fresco</span>
+            <span class="px-3 py-1 rounded-full bg-amber-500/20 border border-amber-400/50 text-amber-200 text-xs font-semibold">🍟 Une portion de frite</span>
+            <span class="px-3 py-1 rounded-full bg-rose-500/20 border border-rose-400/50 text-rose-200 text-xs font-semibold">🍗 Un demi poulet rôti</span>
+            <span class="px-3 py-1 rounded-full bg-purple-500/20 border border-purple-400/50 text-purple-200 text-xs font-semibold">🌯 Un chawarma</span>
+        </div>
+    </main>
+
+    <!-- Pied de page -->
+    <footer class="w-full max-w-4xl text-center text-xs text-white/50 py-1.5 z-10">
+        EL PATRÓN - RESTAURANT - CAFÉ • Présentez l'écran de gain à votre serveur
+    </footer>
+
+    <!-- MODALE DE RÉSULTAT -->
+    <div id="resultModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div id="resultCard" class="modal-enter w-full max-w-md rounded-3xl bg-gradient-to-b from-neutral-900 to-neutral-950 border-2 border-[#C81D11] p-6 sm:p-8 text-center shadow-2xl relative overflow-hidden">
+
+            <div id="modalBannerGlow" class="absolute -top-24 left-1/2 -translate-x-1/2 w-64 h-64 rounded-full bg-[#C81D11]/30 blur-3xl pointer-events-none"></div>
+
+            <!-- Icône principale -->
+            <div id="modalEmoji" class="w-20 h-20 mx-auto rounded-3xl bg-[#C81D11]/20 border border-[#C81D11]/60 flex items-center justify-center text-5xl mb-4 shadow-inner">
+                🎉
+            </div>
+
+            <!-- Titre -->
+            <h2 id="modalTitle" class="font-patron text-3xl sm:text-4xl font-bold text-white tracking-wide uppercase mb-2">
+                Félicitations !
+            </h2>
+
+            <!-- Encadré du lot -->
+            <div id="modalPrizeBox" class="my-4 py-3.5 px-4 rounded-2xl bg-gradient-to-r from-[#C81D11]/25 via-amber-500/20 to-[#C81D11]/25 border border-amber-400/50">
+                <p class="text-xs uppercase tracking-widest text-amber-200/80 font-semibold mb-1">Résultat EL PATRÓN :</p>
+                <p id="modalPrizeName" class="text-xl sm:text-2xl font-extrabold text-white tracking-wide">
+                    Un chawarma
+                </p>
+            </div>
+
+            <!-- Message client -->
+            <p id="modalMessage" class="text-sm sm:text-base text-neutral-300 leading-relaxed mb-5">
+                Montrez cet écran à votre serveur pour valider votre cadeau gourmand !
+            </p>
+
+            <!-- Ticket de validation serveur (uniquement en cas de gain) -->
+            <div id="validationTicket" class="mb-6 p-3.5 rounded-2xl bg-black/80 border border-dashed border-amber-400/70 text-left flex items-center justify-between">
+                <div>
+                    <span class="block text-[10px] uppercase tracking-wider text-neutral-400">Code validation serveur</span>
+                    <span id="ticketCode" class="font-mono text-base sm:text-lg font-bold text-amber-400 tracking-wider">#EP-8492</span>
+                </div>
+                <div class="text-right">
+                    <span class="block text-[10px] uppercase tracking-wider text-neutral-400">Horodatage</span>
+                    <span id="ticketTime" class="text-xs sm:text-sm font-semibold text-neutral-200">20:10:00</span>
+                </div>
+            </div>
+
+            <!-- Bouton de fermeture -->
+            <button id="closeModalBtn" class="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-[#EF4444] to-[#C81D11] hover:from-[#F87171] hover:to-[#DC2626] text-white font-extrabold text-base uppercase tracking-wider shadow-lg border border-white/20 transition active:scale-95 cursor-pointer">
+                Fermer & Continuer
+            </button>
+        </div>
+    </div>
+
+    <!-- TIROIR HISTORIQUE POUR LE PERSONNEL -->
+    <div id="staffDrawerOverlay" class="fixed inset-0 bg-black/75 backdrop-blur-xs z-50 hidden justify-end">
+        <div class="w-full max-w-md bg-neutral-900 border-l border-[#C81D11]/50 h-full flex flex-col p-5 sm:p-6 shadow-2xl">
+            <div class="flex items-center justify-between pb-4 border-b border-white/10">
+                <div>
+                    <h3 class="font-patron text-xl font-bold text-white uppercase tracking-wide flex items-center gap-2">
+                        <span>📋</span> Suivi EL PATRÓN
+                    </h3>
+                    <p class="text-xs text-neutral-400">Historique des tirages de la session</p>
+                </div>
+                <button id="closeDrawerBtn" class="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-neutral-200 transition cursor-pointer">
+                    ✕
+                </button>
+            </div>
+
+            <!-- Compteurs -->
+            <div class="grid grid-cols-2 gap-3 my-4">
+                <div class="p-3 rounded-2xl bg-white/5 border border-white/10">
+                    <span class="text-xs text-neutral-400 block">Total tirages</span>
+                    <span id="statTotalSpins" class="text-xl font-extrabold text-white">0</span>
+                </div>
+                <div class="p-3 rounded-2xl bg-emerald-500/15 border border-emerald-500/30">
+                    <span class="text-xs text-emerald-300 block">Lots gagnés</span>
+                    <span id="statTotalWins" class="text-xl font-extrabold text-emerald-400">0</span>
+                </div>
+            </div>
+
+            <!-- Liste -->
+            <div id="historyList" class="flex-1 overflow-y-auto space-y-2.5 pr-1">
+                <div class="text-center text-neutral-500 text-sm py-12">
+                    Aucun tirage effectué pour le moment.
+                </div>
+            </div>
+
+            <!-- Réinitialisation sécurisée en 2 clics -->
+            <div class="pt-4 border-t border-white/10 mt-4">
+                <button id="resetHistoryBtn" class="w-full py-3 px-4 rounded-xl bg-red-600/20 hover:bg-red-600/30 border border-red-500/50 text-red-200 text-sm font-bold transition flex items-center justify-center gap-2 cursor-pointer">
+                    <span>🗑️</span>
+                    <span id="resetBtnLabel">Réinitialiser l'historique</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * GESTION DU LOGO CENTRAL EL PATRÓN
+         * Tente de charger "LOGO EL PATRON ROUGE.png" s'il est dans le même dossier,
+         * et affiche par défaut le logo vectoriel haute fidélité EL PATRÓN.
+         */
+        const hubLogoImg = document.getElementById('hubLogoImg');
+        const hubLogoSvg = document.getElementById('hubLogoSvg');
+        const customLogoInput = document.getElementById('customLogoInput');
+
+        hubLogoImg.addEventListener('load', () => {
+            if (hubLogoImg.naturalWidth > 0) {
+                hubLogoImg.classList.remove('hidden');
+                hubLogoSvg.classList.add('hidden');
+            }
+        });
+
+        hubLogoImg.addEventListener('error', () => {
+            hubLogoImg.classList.add('hidden');
+            hubLogoSvg.classList.remove('hidden');
+        });
+
+        // Permet à l'utilisateur de charger son fichier PNG local à tout moment
+        customLogoInput.addEventListener('change', (e) => {
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                hubLogoImg.src = ev.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        /**
+         * RÉPARTITION ÉQUITABLE ET ALÉATOIRE DES 14 SEGMENTS
+         * 4 lots gagnants répartis uniformément autour de la roue (espacés de 2 à 3 "Pas de chance")
+         * avec ordre des lots mélangé aléatoirement et décalage de départ aléatoire.
+         */
+        const WINNING_PRIZES = [
+            { label: "Un fresco", isWin: true, icon: "🥤", bg: "#059669", text: "#ffffff" },
+            { label: "Une portion de frite", isWin: true, icon: "🍟", bg: "#d97706", text: "#ffffff" },
+            { label: "Un demi poulet rôti", isWin: true, icon: "🍗", bg: "#C81D11", text: "#ffffff" },
+            { label: "Un chawarma", isWin: true, icon: "🌯", bg: "#7c3aed", text: "#ffffff" }
+        ];
+
+        const LOSE_STYLES = [
+            { label: "Pas de chance", isWin: false, icon: "🍀", bg: "#1c1917", text: "#e7e5e4" },
+            { label: "Pas de chance", isWin: false, icon: "🎲", bg: "#292524", text: "#d6d3d1" }
+        ];
+
+        function shuffleArray(array) {
+            const copy = [...array];
+            for (let i = copy.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [copy[i], copy[j]] = [copy[j], copy[i]];
+            }
+            return copy;
+        }
+
+        function buildBalancedRandomSegments() {
+            const totalSlots = 14;
+            const shuffledPrizes = shuffleArray(WINNING_PRIZES);
+
+            // Positions équidistantes sur 14 parts : espacements de 3, 4, 3, 4 parts (soit 2 ou 3 "Pas de chance" entre chaque gain)
+            const baseWinPositions = [0, 3, 7, 10];
+            const randomShift = Math.floor(Math.random() * totalSlots);
+            const winSlotMap = new Map();
+
+            baseWinPositions.forEach((pos, idx) => {
+                const shiftedPos = (pos + randomShift) % totalSlots;
+                winSlotMap.set(shiftedPos, shuffledPrizes[idx]);
+            });
+
+            const segments = [];
+            let loseCounter = 0;
+            for (let i = 0; i < totalSlots; i++) {
+                if (winSlotMap.has(i)) {
+                    segments.push(winSlotMap.get(i));
+                } else {
+                    const style = LOSE_STYLES[loseCounter % LOSE_STYLES.length];
+                    segments.push({ ...style });
+                    loseCounter++;
+                }
+            }
+            return segments;
+        }
+
+        const SEGMENTS = buildBalancedRandomSegments();
+        const NUM_SEGMENTS = SEGMENTS.length;
+        const ARC_ANGLE = (2 * Math.PI) / NUM_SEGMENTS;
+
+        // Références DOM
+        const canvas = document.getElementById('wheelCanvas');
+        const ctx = canvas.getContext('2d');
+        const wheelPointer = document.getElementById('wheelPointer');
+        const spinCenterBtn = document.getElementById('spinCenterBtn');
+        const spinMainBtn = document.getElementById('spinMainBtn');
+        const soundToggleBtn = document.getElementById('soundToggleBtn');
+        const soundIcon = document.getElementById('soundIcon');
+        const soundText = document.getElementById('soundText');
+
+        // Modale
+        const resultModal = document.getElementById('resultModal');
+        const modalBannerGlow = document.getElementById('modalBannerGlow');
+        const modalEmoji = document.getElementById('modalEmoji');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalPrizeBox = document.getElementById('modalPrizeBox');
+        const modalPrizeName = document.getElementById('modalPrizeName');
+        const modalMessage = document.getElementById('modalMessage');
+        const validationTicket = document.getElementById('validationTicket');
+        const ticketCode = document.getElementById('ticketCode');
+        const ticketTime = document.getElementById('ticketTime');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+
+        // Historique
+        const staffDrawerBtn = document.getElementById('staffDrawerBtn');
+        const staffDrawerOverlay = document.getElementById('staffDrawerOverlay');
+        const closeDrawerBtn = document.getElementById('closeDrawerBtn');
+        const historyBadge = document.getElementById('historyBadge');
+        const historyList = document.getElementById('historyList');
+        const statTotalSpins = document.getElementById('statTotalSpins');
+        const statTotalWins = document.getElementById('statTotalWins');
+        const resetHistoryBtn = document.getElementById('resetHistoryBtn');
+        const resetBtnLabel = document.getElementById('resetBtnLabel');
+
+        // État
+        let currentRotation = 0;
+        let isSpinning = false;
+        let soundEnabled = true;
+        let audioCtx = null;
+        let lastSegmentIndex = -1;
+        let spinHistory = [];
+        let resetConfirmTimeout = null;
+        let resetArmed = false;
+
+        try {
+            const saved = localStorage.getItem('el_patron_wheel_history');
+            if (saved) {
+                spinHistory = JSON.parse(saved);
+            }
+        } catch (e) {}
+
+        /**
+         * MOTEUR AUDIO SYNTHÉTISÉ (WEB AUDIO API)
+         */
+        function initAudio() {
+            if (!audioCtx) {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioContextClass) {
+                    audioCtx = new AudioContextClass();
+                }
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playTickSound() {
+            if (!soundEnabled || !audioCtx) return;
+            try {
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(640, now);
+                osc.frequency.exponentialRampToValueAtTime(190, now + 0.045);
+
+                gain.gain.setValueAtTime(0.18, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc.start(now);
+                osc.stop(now + 0.05);
+            } catch (e) {}
+        }
+
+        function playWinSound() {
+            if (!soundEnabled || !audioCtx) return;
+            try {
+                const now = audioCtx.currentTime;
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+
+                    osc.type = 'sine';
+                    const startTime = now + idx * 0.11;
+                    osc.frequency.setValueAtTime(freq, startTime);
+
+                    gain.gain.setValueAtTime(0.001, startTime);
+                    gain.gain.linearRampToValueAtTime(0.25, startTime + 0.03);
+                    gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.45);
+
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+
+                    osc.start(startTime);
+                    osc.stop(startTime + 0.48);
+                });
+            } catch (e) {}
+        }
+
+        function playLoseSound() {
+            if (!soundEnabled || !audioCtx) return;
+            try {
+                const now = audioCtx.currentTime;
+                const notes = [392.00, 329.63];
+                notes.forEach((freq, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+
+                    osc.type = 'sine';
+                    const startTime = now + idx * 0.18;
+                    osc.frequency.setValueAtTime(freq, startTime);
+
+                    gain.gain.setValueAtTime(0.001, startTime);
+                    gain.gain.linearRampToValueAtTime(0.16, startTime + 0.04);
+                    gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.35);
+
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+
+                    osc.start(startTime);
+                    osc.stop(startTime + 0.38);
+                });
+            } catch (e) {}
+        }
+
+        /**
+         * DESSIN DU CANVAS AVEC PROTECTION CONTRE LES DIMENSIONS NULLES (ResizeObserver)
+         */
+        function resizeAndDrawWheel() {
+            const container = canvas.parentElement;
+            if (!container) return;
+            const rect = container.getBoundingClientRect();
+            if (rect.width <= 0 || rect.height <= 0) return;
+
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = Math.round(rect.width * dpr);
+            canvas.height = Math.round(rect.height * dpr);
+
+            ctx.save();
+            ctx.scale(dpr, dpr);
+            drawWheel(rect.width, rect.height);
+            ctx.restore();
+        }
+
+        function drawWheel(width, height) {
+            if (width <= 0 || height <= 0) return;
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const radius = Math.max(10, Math.min(centerX, centerY) - 4);
+
+            ctx.clearRect(0, 0, width, height);
+
+            for (let i = 0; i < NUM_SEGMENTS; i++) {
+                const seg = SEGMENTS[i];
+                const startAngle = currentRotation + i * ARC_ANGLE - Math.PI / 2;
+                const endAngle = startAngle + ARC_ANGLE;
+
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+                ctx.closePath();
+
+                ctx.fillStyle = seg.bg;
+                ctx.fill();
+
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = seg.isWin ? "#fde047" : "rgba(255, 255, 255, 0.22)";
+                ctx.stroke();
+
+                // Libellé et icône dans chaque secteur
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                ctx.rotate(startAngle + ARC_ANGLE / 2);
+
+                ctx.textAlign = "right";
+                ctx.textBaseline = "middle";
+                ctx.fillStyle = seg.text;
+
+                const fontSize = Math.max(9.5, Math.min(14, width * 0.028));
+                ctx.font = `${seg.isWin ? '800' : '600'} ${fontSize}px Outfit, sans-serif`;
+
+                ctx.shadowColor = "rgba(0,0,0,0.7)";
+                ctx.shadowBlur = 3;
+
+                const textRadius = Math.max(12, radius - 14);
+                ctx.fillText(`${seg.label} ${seg.icon}`, textRadius, 0);
+
+                ctx.restore();
+            }
+
+            // Clous dorés sur le pourtour
+            for (let i = 0; i < NUM_SEGMENTS; i++) {
+                const pinAngle = currentRotation + i * ARC_ANGLE - Math.PI / 2;
+                const pinRadius = Math.max(6, radius - 7);
+                const pinX = centerX + Math.cos(pinAngle) * pinRadius;
+                const pinY = centerY + Math.sin(pinAngle) * pinRadius;
+
+                ctx.beginPath();
+                ctx.arc(pinX, pinY, 3.5, 0, Math.PI * 2);
+                ctx.fillStyle = "#fef08a";
+                ctx.fill();
+                ctx.lineWidth = 1;
+                ctx.strokeStyle = "#78350f";
+                ctx.stroke();
+            }
+        }
+
+        function getCurrentSegmentIndex(rotationRad) {
+            const normalized = ((rotationRad % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+            const index = Math.floor(((2 * Math.PI - normalized) % (2 * Math.PI)) / ARC_ANGLE);
+            return index % NUM_SEGMENTS;
+        }
+
+        /**
+         * ANIMATION PHYSIQUE DU TIRAGE
+         */
+        function spinWheel() {
+            if (isSpinning) return;
+
+            initAudio();
+            isSpinning = true;
+
+            spinMainBtn.disabled = true;
+            spinMainBtn.classList.add('opacity-60', 'cursor-not-allowed');
+            spinCenterBtn.classList.remove('hub-pulse');
+
+            const extraSpins = (6 + Math.random() * 3) * 2 * Math.PI;
+            const randomOffset = Math.random() * 2 * Math.PI;
+            const startRotation = currentRotation;
+            const targetRotation = startRotation + extraSpins + randomOffset;
+
+            const duration = 4800 + Math.random() * 1000;
+            const startTime = performance.now();
+
+            function easeOutQuint(t) {
+                return 1 - Math.pow(1 - t, 5);
+            }
+
+            function animate(now) {
+                const elapsed = now - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const easedProgress = easeOutQuint(progress);
+
+                currentRotation = startRotation + (targetRotation - startRotation) * easedProgress;
+
+                const activeIdx = getCurrentSegmentIndex(currentRotation);
+                if (activeIdx !== lastSegmentIndex) {
+                    lastSegmentIndex = activeIdx;
+                    playTickSound();
+                    triggerPointerBounce();
+                }
+
+                const rect = canvas.parentElement.getBoundingClientRect();
+                if (rect.width > 0 && rect.height > 0) {
+                    const dpr = window.devicePixelRatio || 1;
+                    ctx.save();
+                    ctx.scale(dpr, dpr);
+                    drawWheel(rect.width, rect.height);
+                    ctx.restore();
+                }
+
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    finishSpin(activeIdx);
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        function triggerPointerBounce() {
+            wheelPointer.classList.remove('pointer-animate');
+            void wheelPointer.offsetWidth;
+            wheelPointer.classList.add('pointer-animate');
+        }
+
+        /**
+         * AFFICHAGE DU RÉSULTAT & ENREGISTREMENT
+         */
+        function finishSpin(winningIndex) {
+            isSpinning = false;
+            spinMainBtn.disabled = false;
+            spinMainBtn.classList.remove('opacity-60', 'cursor-not-allowed');
+            spinCenterBtn.classList.add('hub-pulse');
+
+            const segment = SEGMENTS[winningIndex];
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const validationId = segment.isWin
+                ? `#EP-${Math.floor(1000 + Math.random() * 9000)}`
+                : null;
+
+            recordHistory({
+                label: segment.label,
+                icon: segment.icon,
+                isWin: segment.isWin,
+                time: timeStr,
+                code: validationId
+            });
+
+            if (segment.isWin) {
+                playWinSound();
+                launchConfetti();
+
+                modalBannerGlow.className = "absolute -top-24 left-1/2 -translate-x-1/2 w-64 h-64 rounded-full bg-emerald-500/30 blur-3xl pointer-events-none";
+                modalEmoji.textContent = segment.icon;
+                modalEmoji.className = "w-20 h-20 mx-auto rounded-3xl bg-emerald-500/20 border border-emerald-400/50 flex items-center justify-center text-5xl mb-4 shadow-inner";
+                modalTitle.textContent = "Félicitations ! 🎉";
+                modalTitle.className = "font-patron text-3xl sm:text-4xl font-bold text-emerald-300 uppercase tracking-wide mb-2";
+
+                modalPrizeBox.className = "my-4 py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-500/20 via-amber-500/25 to-emerald-500/20 border border-emerald-400/50";
+                modalPrizeName.textContent = segment.label;
+                modalMessage.textContent = "Quel régal ! Présentez cet écran à votre serveur EL PATRÓN dès maintenant pour recevoir votre lot.";
+
+                ticketCode.textContent = validationId;
+                ticketTime.textContent = timeStr;
+                validationTicket.classList.remove('hidden');
+            } else {
+                playLoseSound();
+
+                modalBannerGlow.className = "absolute -top-24 left-1/2 -translate-x-1/2 w-64 h-64 rounded-full bg-[#C81D11]/25 blur-3xl pointer-events-none";
+                modalEmoji.textContent = "😊";
+                modalEmoji.className = "w-20 h-20 mx-auto rounded-3xl bg-white/10 border border-white/20 flex items-center justify-center text-5xl mb-4 shadow-inner";
+                modalTitle.textContent = "Pas de chance !";
+                modalTitle.className = "font-patron text-3xl sm:text-4xl font-bold text-amber-200 uppercase tracking-wide mb-2";
+
+                modalPrizeBox.className = "my-4 py-3.5 px-4 rounded-2xl bg-white/5 border border-white/15";
+                modalPrizeName.textContent = "Pas de chance cette fois";
+                modalMessage.textContent = "Toute l'équipe EL PATRÓN vous souhaite un excellent appétit et vous invite à retenter votre chance lors de votre prochaine visite !";
+
+                validationTicket.classList.add('hidden');
+            }
+
+            resultModal.classList.remove('hidden');
+            resultModal.classList.add('flex');
+        }
+
+        function launchConfetti() {
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 95,
+                    spread: 75,
+                    origin: { y: 0.6 },
+                    colors: ['#C81D11', '#fbbf24', '#10b981', '#ffffff']
+                });
+                setTimeout(() => {
+                    confetti({ particleCount: 50, angle: 60, spread: 55, origin: { x: 0 } });
+                    confetti({ particleCount: 50, angle: 120, spread: 55, origin: { x: 1 } });
+                }, 250);
+            }
+        }
+
+        /**
+         * HISTORIQUE & STATISTIQUES DU PERSONNEL
+         */
+        function recordHistory(entry) {
+            spinHistory.unshift(entry);
+            if (spinHistory.length > 50) {
+                spinHistory.pop();
+            }
+            try {
+                localStorage.setItem('el_patron_wheel_history', JSON.stringify(spinHistory));
+            } catch (e) {}
+            renderHistory();
+        }
+
+        function renderHistory() {
+            const total = spinHistory.length;
+            const wins = spinHistory.filter(item => item.isWin).length;
+
+            historyBadge.textContent = total;
+            statTotalSpins.textContent = total;
+            statTotalWins.textContent = wins;
+
+            if (total === 0) {
+                historyList.innerHTML = `
+                    <div class="text-center text-neutral-500 text-sm py-12">
+                        Aucun tirage effectué pour le moment.
+                    </div>
+                `;
+                return;
+            }
+
+            historyList.innerHTML = spinHistory.map(item => `
+                <div class="p-3 rounded-2xl ${item.isWin ? 'bg-emerald-500/15 border border-emerald-500/35' : 'bg-white/5 border border-white/10'} flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <span class="text-2xl">${item.icon}</span>
+                        <div>
+                            <p class="text-sm font-bold ${item.isWin ? 'text-emerald-300' : 'text-neutral-300'}">${item.label}</p>
+                            <p class="text-xs text-neutral-400">${item.time} ${item.code ? `• <span class="font-mono text-amber-400">${item.code}</span>` : ''}</p>
+                        </div>
+                    </div>
+                    <span class="text-[10px] font-extrabold uppercase px-2 py-1 rounded-full ${item.isWin ? 'bg-emerald-500 text-neutral-950' : 'bg-neutral-700 text-neutral-300'}">
+                        ${item.isWin ? 'GAGNÉ' : 'PERDU'}
+                    </span>
+                </div>
+            `).join('');
+        }
+
+        // Événements
+        spinMainBtn.addEventListener('click', spinWheel);
+        spinCenterBtn.addEventListener('click', spinWheel);
+        canvas.addEventListener('click', spinWheel);
+
+        closeModalBtn.addEventListener('click', () => {
+            resultModal.classList.add('hidden');
+            resultModal.classList.remove('flex');
+        });
+
+        soundToggleBtn.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            if (soundEnabled) {
+                initAudio();
+                soundIcon.textContent = "🔊";
+                soundText.textContent = "Son";
+                soundToggleBtn.classList.remove('opacity-60');
+            } else {
+                soundIcon.textContent = "🔇";
+                soundText.textContent = "Muet";
+                soundToggleBtn.classList.add('opacity-60');
+            }
+        });
+
+        staffDrawerBtn.addEventListener('click', () => {
+            staffDrawerOverlay.classList.remove('hidden');
+            staffDrawerOverlay.classList.add('flex');
+        });
+
+        closeDrawerBtn.addEventListener('click', () => {
+            staffDrawerOverlay.classList.add('hidden');
+            staffDrawerOverlay.classList.remove('flex');
+        });
+
+        staffDrawerOverlay.addEventListener('click', (e) => {
+            if (e.target === staffDrawerOverlay) {
+                staffDrawerOverlay.classList.add('hidden');
+                staffDrawerOverlay.classList.remove('flex');
+            }
+        });
+
+        resetHistoryBtn.addEventListener('click', () => {
+            if (!resetArmed) {
+                resetArmed = true;
+                resetBtnLabel.textContent = "Cliquer encore pour confirmer";
+                resetHistoryBtn.classList.add('bg-red-600', 'text-white');
+                resetConfirmTimeout = setTimeout(() => {
+                    resetArmed = false;
+                    resetBtnLabel.textContent = "Réinitialiser l'historique";
+                    resetHistoryBtn.classList.remove('bg-red-600', 'text-white');
+                }, 3500);
+            } else {
+                clearTimeout(resetConfirmTimeout);
+                resetArmed = false;
+                resetBtnLabel.textContent = "Réinitialiser l'historique";
+                resetHistoryBtn.classList.remove('bg-red-600', 'text-white');
+                spinHistory = [];
+                try {
+                    localStorage.removeItem('el_patron_wheel_history');
+                } catch (e) {}
+                renderHistory();
+            }
+        });
+
+        // Observation automatique des dimensions pour un rendu toujours net
+        const wheelObserver = new ResizeObserver(() => {
+            resizeAndDrawWheel();
+        });
+        if (canvas.parentElement) {
+            wheelObserver.observe(canvas.parentElement);
+        }
+
+        window.addEventListener('resize', resizeAndDrawWheel);
+        window.addEventListener('load', () => {
+            resizeAndDrawWheel();
+            renderHistory();
+        });
+    </script>
+</body>
+</html>
