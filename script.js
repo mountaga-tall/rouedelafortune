@@ -84,7 +84,7 @@
             return segments;
         }
 
-        const SEGMENTS = buildBalancedRandomSegments();
+        let SEGMENTS = buildBalancedRandomSegments();
         const NUM_SEGMENTS = SEGMENTS.length;
         const ARC_ANGLE = (2 * Math.PI) / NUM_SEGMENTS;
 
@@ -133,6 +133,7 @@
         let resetConfirmTimeout = null;
         let resetArmed = false;
         let playerRegistered = false;
+        let activeSpinChallenge = null;
 
         try {
             const saved = localStorage.getItem('el_patron_wheel_history');
@@ -321,7 +322,7 @@
         /**
          * ANIMATION PHYSIQUE DU TIRAGE
          */
-        function spinWheel() {
+        async function spinWheel() {
             if (isSpinning) return;
             if (!playerRegistered) {
                 document.getElementById("registrationGate")?.classList.remove("is-hidden");
@@ -331,57 +332,86 @@
             initAudio();
             isSpinning = true;
             wheelContainer.classList.add('is-spinning');
-
             spinMainBtn.disabled = true;
             spinMainBtn.classList.add('opacity-60', 'cursor-not-allowed');
+            spinCenterBtn.disabled = true;
             spinCenterBtn.classList.remove('hub-pulse');
 
-            const extraSpins = (6 + Math.random() * 3) * 2 * Math.PI;
-            const randomOffset = Math.random() * 2 * Math.PI;
-            const startRotation = currentRotation;
-            const targetRotation = startRotation + extraSpins + randomOffset;
+            try {
+                const response = await fetch('/api/spins', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ action: 'start' })
+                });
+                const challenge = await response.json();
+                if (!response.ok) throw new Error(challenge.error || 'Impossible de lancer le tirage.');
 
-            const duration = 4800 + Math.random() * 1000;
-            const startTime = performance.now();
+                activeSpinChallenge = challenge;
+                SEGMENTS = challenge.segments;
+                resizeAndDrawWheel();
 
-            function easeOutQuint(t) {
-                return 1 - Math.pow(1 - t, 5);
+                const startRotation = currentRotation;
+                const extraSpins = (6 + Math.random() * 3) * 2 * Math.PI;
+                const desiredRotation = ((2 * Math.PI - (challenge.targetIndex + 0.5) * ARC_ANGLE) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+                const currentNormalized = ((startRotation % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+                const alignmentOffset = (desiredRotation - currentNormalized + 2 * Math.PI) % (2 * Math.PI);
+                const targetRotation = startRotation + extraSpins + alignmentOffset;
+
+                const duration = 4800 + Math.random() * 1000;
+                const startTime = performance.now();
+
+                function easeOutQuint(t) {
+                    return 1 - Math.pow(1 - t, 5);
+                }
+
+                function animate(now) {
+                    const elapsed = now - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    const easedProgress = easeOutQuint(progress);
+                    currentRotation = startRotation + (targetRotation - startRotation) * easedProgress;
+
+                    const activeIdx = getCurrentSegmentIndex(currentRotation);
+                    if (activeIdx !== lastSegmentIndex) {
+                        lastSegmentIndex = activeIdx;
+                        playTickSound();
+                        triggerPointerBounce();
+                    }
+
+                    const rect = canvas.parentElement.getBoundingClientRect();
+                    if (rect.width > 0 && rect.height > 0) {
+                        const dpr = window.devicePixelRatio || 1;
+                        ctx.save();
+                        ctx.scale(dpr, dpr);
+                        drawWheel(rect.width, rect.height);
+                        ctx.restore();
+                    }
+
+                    if (progress < 1) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        finishSpin(challenge.targetIndex);
+                    }
+                }
+
+                requestAnimationFrame(animate);
+            } catch (error) {
+                isSpinning = false;
+                activeSpinChallenge = null;
+                wheelContainer.classList.remove('is-spinning');
+                spinMainBtn.disabled = false;
+                spinMainBtn.classList.remove('opacity-60', 'cursor-not-allowed');
+                spinCenterBtn.disabled = false;
+                spinCenterBtn.classList.add('hub-pulse');
+                const status = document.getElementById('registrationStatus');
+                if (status) {
+                    status.textContent = error.message || "Le jeu est momentanément indisponible.";
+                    status.classList.remove('is-success');
+                }
             }
-
-            function animate(now) {
-                const elapsed = now - startTime;
-                const progress = Math.min(elapsed / duration, 1);
-                const easedProgress = easeOutQuint(progress);
-
-                currentRotation = startRotation + (targetRotation - startRotation) * easedProgress;
-
-                const activeIdx = getCurrentSegmentIndex(currentRotation);
-                if (activeIdx !== lastSegmentIndex) {
-                    lastSegmentIndex = activeIdx;
-                    playTickSound();
-                    triggerPointerBounce();
-                }
-
-                const rect = canvas.parentElement.getBoundingClientRect();
-                if (rect.width > 0 && rect.height > 0) {
-                    const dpr = window.devicePixelRatio || 1;
-                    ctx.save();
-                    ctx.scale(dpr, dpr);
-                    drawWheel(rect.width, rect.height);
-                    ctx.restore();
-                }
-
-                if (progress < 1) {
-                    requestAnimationFrame(animate);
-                } else {
-                    finishSpin(activeIdx);
-                }
-            }
-
-            requestAnimationFrame(animate);
         }
 
-        function triggerPointerBounce() {
+                function triggerPointerBounce() {
             wheelPointer.classList.remove('pointer-animate');
             void wheelPointer.offsetWidth;
             wheelPointer.classList.add('pointer-animate');
@@ -403,11 +433,14 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'same-origin',
-                    body: JSON.stringify({ label: segment.label })
+                    body: JSON.stringify({ action: 'finish', challengeId: activeSpinChallenge?.challengeId })
                 });
                 const payload = await response.json();
                 if (!response.ok) throw new Error(payload.error || 'Enregistrement impossible.');
                 persisted = true;
+                segment.label = payload.label;
+                segment.icon = payload.icon;
+                segment.isWin = payload.isWin;
                 validationId = payload.validationCode || null;
                 if (payload.playedAt) {
                     timeStr = new Date(payload.playedAt).toLocaleTimeString('fr-FR', {
@@ -419,9 +452,11 @@
             }
 
             isSpinning = false;
+            activeSpinChallenge = null;
             wheelContainer.classList.remove('is-spinning');
             spinMainBtn.disabled = false;
             spinMainBtn.classList.remove('opacity-60', 'cursor-not-allowed');
+            spinCenterBtn.disabled = false;
             spinCenterBtn.classList.add('hub-pulse');
 
             recordHistory({
