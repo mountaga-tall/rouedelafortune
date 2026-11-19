@@ -1,7 +1,7 @@
 import { randomInt } from "node:crypto";
-import { ensureSchema, getSql } from "./_lib/db.js";
-import { getCustomerId } from "./_lib/auth.js";
-import { json, methodNotAllowed, originAllowed, readJson } from "./_lib/http.js";
+import { ensureSchema, getSql } from "../lib/server/db.js";
+import { getCustomerId } from "../lib/server/auth.js";
+import { json, methodNotAllowed, originAllowed, readJson } from "../lib/server/http.js";
 
 const PRIZES = {
   "Un fresco": "🥤",
