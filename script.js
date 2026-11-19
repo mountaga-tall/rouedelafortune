@@ -132,6 +132,7 @@
         let spinHistory = [];
         let resetConfirmTimeout = null;
         let resetArmed = false;
+        let playerRegistered = false;
 
         try {
             const saved = localStorage.getItem('el_patron_wheel_history');
@@ -322,6 +323,10 @@
          */
         function spinWheel() {
             if (isSpinning) return;
+            if (!playerRegistered) {
+                document.getElementById("registrationGate")?.classList.remove("is-hidden");
+                return;
+            }
 
             initAudio();
             isSpinning = true;
@@ -385,19 +390,39 @@
         /**
          * AFFICHAGE DU RÉSULTAT & ENREGISTREMENT
          */
-        function finishSpin(winningIndex) {
+        async function finishSpin(winningIndex) {
+            const segment = SEGMENTS[winningIndex];
+            let persisted = false;
+            let validationId = null;
+            const now = new Date();
+            let timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+            // Le résultat est aussi enregistré sur le serveur avec le profil du participant.
+            try {
+                const response = await fetch('/api/spins', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ label: segment.label })
+                });
+                const payload = await response.json();
+                if (!response.ok) throw new Error(payload.error || 'Enregistrement impossible.');
+                persisted = true;
+                validationId = payload.validationCode || null;
+                if (payload.playedAt) {
+                    timeStr = new Date(payload.playedAt).toLocaleTimeString('fr-FR', {
+                        hour: '2-digit', minute: '2-digit', second: '2-digit'
+                    });
+                }
+            } catch (error) {
+                console.error('Historique serveur indisponible:', error);
+            }
+
             isSpinning = false;
             wheelContainer.classList.remove('is-spinning');
             spinMainBtn.disabled = false;
             spinMainBtn.classList.remove('opacity-60', 'cursor-not-allowed');
             spinCenterBtn.classList.add('hub-pulse');
-
-            const segment = SEGMENTS[winningIndex];
-            const now = new Date();
-            const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            const validationId = segment.isWin
-                ? `#EP-${Math.floor(1000 + Math.random() * 9000)}`
-                : null;
 
             recordHistory({
                 label: segment.label,
@@ -414,16 +439,20 @@
                 modalBannerGlow.className = "absolute -top-24 left-1/2 -translate-x-1/2 w-64 h-64 rounded-full bg-emerald-500/30 blur-3xl pointer-events-none";
                 modalEmoji.textContent = segment.icon;
                 modalEmoji.className = "w-20 h-20 mx-auto rounded-3xl bg-emerald-500/20 border border-emerald-400/50 flex items-center justify-center text-5xl mb-4 shadow-inner";
-                modalTitle.textContent = "Félicitations ! 🎉";
+                modalTitle.textContent = persisted ? "Félicitations ! 🎉" : "Bravo !";
                 modalTitle.className = "font-patron text-3xl sm:text-4xl font-bold text-emerald-300 uppercase tracking-wide mb-2";
 
                 modalPrizeBox.className = "my-4 py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-500/20 via-amber-500/25 to-emerald-500/20 border border-emerald-400/50";
                 modalPrizeName.textContent = segment.label;
-                modalMessage.textContent = "Quel régal ! Présentez cet écran à votre serveur EL PATRÓN dès maintenant pour recevoir votre lot.";
-
-                ticketCode.textContent = validationId;
-                ticketTime.textContent = timeStr;
-                validationTicket.classList.remove('hidden');
+                if (persisted && validationId) {
+                    modalMessage.textContent = "Quel régal ! Présentez votre code à l'équipe EL PATRÓN pour valider votre cadeau.";
+                    ticketCode.textContent = validationId;
+                    ticketTime.textContent = timeStr;
+                    validationTicket.classList.remove('hidden');
+                } else {
+                    modalMessage.textContent = "Votre gain doit être confirmé par l'équipe EL PATRÓN. La connexion n'a pas permis d'enregistrer le tirage : montrez cet écran au personnel.";
+                    validationTicket.classList.add('hidden');
+                }
             } else {
                 playLoseSound();
 
@@ -435,8 +464,9 @@
 
                 modalPrizeBox.className = "my-4 py-3.5 px-4 rounded-2xl bg-white/5 border border-white/15";
                 modalPrizeName.textContent = "Pas de chance cette fois";
-                modalMessage.textContent = "Toute l'équipe EL PATRÓN vous souhaite un excellent appétit et vous invite à retenter votre chance lors de votre prochaine visite !";
-
+                modalMessage.textContent = persisted
+                    ? "Toute l'équipe EL PATRÓN vous souhaite un excellent appétit et vous invite à retenter votre chance lors de votre prochaine visite !"
+                    : "Le résultat n'a pas pu être ajouté à l'historique. Merci d'en informer l'équipe EL PATRÓN.";
                 validationTicket.classList.add('hidden');
             }
 
@@ -444,7 +474,7 @@
             resultModal.classList.add('flex');
         }
 
-        function launchConfetti() {
+                function launchConfetti() {
             if (typeof confetti === 'function') {
                 confetti({
                     particleCount: 95,
@@ -569,6 +599,80 @@
                 renderHistory();
             }
         });
+
+
+        // Accès participant : une session sécurisée est créée après inscription.
+        const registrationGate = document.getElementById('registrationGate');
+        const registrationForm = document.getElementById('registrationForm');
+        const registrationSubmit = document.getElementById('registrationSubmit');
+        const registrationStatus = document.getElementById('registrationStatus');
+        const playerWelcome = document.getElementById('playerWelcome');
+
+        function setRegistrationStatus(message, success = false) {
+            registrationStatus.textContent = message;
+            registrationStatus.classList.toggle('is-success', success);
+        }
+
+        function unlockGame(firstName) {
+            playerRegistered = true;
+            registrationGate.classList.add('is-hidden');
+            playerWelcome.textContent = firstName ? `Bienvenue, ${firstName} !` : '';
+        }
+
+        async function initializePlayerAccess() {
+            try {
+                const response = await fetch('/api/session', { credentials: 'same-origin', cache: 'no-store' });
+                if (response.ok) {
+                    const session = await response.json();
+                    if (session.authenticated) {
+                        unlockGame(session.firstName);
+                        return;
+                    }
+                }
+            } catch (error) {
+                console.warn('Vérification de session indisponible:', error);
+            }
+            registrationGate.classList.remove('is-hidden');
+        }
+
+        registrationForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            setRegistrationStatus('');
+            if (!registrationForm.reportValidity()) return;
+
+            const formData = new FormData(registrationForm);
+            const payload = {
+                firstName: formData.get('firstName'),
+                lastName: formData.get('lastName'),
+                phone: formData.get('phone'),
+                email: formData.get('email'),
+                privacyConsent: document.getElementById('privacyConsent').checked,
+                marketingConsent: document.getElementById('marketingConsent').checked,
+                website: formData.get('website')
+            };
+
+            registrationSubmit.disabled = true;
+            registrationSubmit.innerHTML = '<span>⌛</span> Enregistrement...';
+            try {
+                const response = await fetch('/api/participants', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || 'Inscription impossible.');
+                setRegistrationStatus(result.message || 'Inscription enregistrée.', true);
+                unlockGame(result.participant?.firstName || payload.firstName);
+            } catch (error) {
+                setRegistrationStatus(error.message || 'Une erreur est survenue. Réessayez.');
+            } finally {
+                registrationSubmit.disabled = false;
+                registrationSubmit.innerHTML = '<span>🎯</span> Accéder à la roue';
+            }
+        });
+
+        initializePlayerAccess();
 
         // Observation automatique des dimensions pour un rendu toujours net
         const wheelObserver = new ResizeObserver(() => {
