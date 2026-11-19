@@ -1,6 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
-import { json, methodNotAllowed, originAllowed, readJson } from "../_lib/http.js";
-import { setAdminSession } from "../_lib/auth.js";
+import { json, methodNotAllowed, originAllowed, readJson } from "../../lib/server/http.js";
+import { setAdminSession } from "../../lib/server/auth.js";
 
 function safeEqual(a, b) {
   const left = Buffer.from(String(a));
