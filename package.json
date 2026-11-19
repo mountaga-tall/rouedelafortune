@@ -1,0 +1,12 @@
+{
+  "name": "el-patron-roue-de-la-fortune",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.0.2"
+  }
+}
