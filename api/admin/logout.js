@@ -1,5 +1,5 @@
-import { clearAdminSession } from "../_lib/auth.js";
-import { json, methodNotAllowed, originAllowed } from "../_lib/http.js";
+import { clearAdminSession } from "../../lib/server/auth.js";
+import { json, methodNotAllowed, originAllowed } from "../../lib/server/http.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return methodNotAllowed(res, ["POST"]);
