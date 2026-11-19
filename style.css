@@ -1,0 +1,152 @@
+:root {
+            --patron-red: #C81D11;
+            --patron-red-dark: #8E1109;
+            --patron-gold: #F59E0B;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: radial-gradient(circle at top center, #2b0907 0%, #140504 55%, #090303 100%);
+            color: #ffffff;
+            overflow-x: hidden;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .font-patron {
+            font-family: 'Oswald', sans-serif;
+            letter-spacing: 0.04em;
+        }
+
+        /* Ambiance premium EL PATRÓN */
+        .ambient-backdrop {
+            position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+            background:
+                radial-gradient(ellipse at 50% 42%, rgba(200, 29, 17, .17), transparent 42%),
+                radial-gradient(ellipse at 12% 12%, rgba(245, 158, 11, .10), transparent 28%),
+                radial-gradient(ellipse at 88% 78%, rgba(200, 29, 17, .12), transparent 32%);
+        }
+        .ambient-backdrop::before, .ambient-backdrop::after {
+            content: ""; position: absolute; inset: -35%;
+            background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, rgba(245, 158, 11, .055) 42deg, transparent 92deg, rgba(200, 29, 17, .07) 165deg, transparent 225deg);
+            animation: ambientDrift 32s linear infinite;
+        }
+        .ambient-backdrop::after { inset: -15%; opacity: .55; filter: blur(55px); animation-duration: 48s; animation-direction: reverse; }
+        @keyframes ambientDrift { to { transform: rotate(360deg); } }
+
+        .brand-logo-frame {
+            position: relative; width: 3.5rem; height: 3.5rem; flex: 0 0 auto;
+            display: grid; place-items: center; padding: .22rem; overflow: hidden;
+            border-radius: 1.1rem; background: linear-gradient(145deg, #fff 0%, #f8fafc 72%, #fef3c7 100%);
+            border: 2px solid rgba(251, 191, 36, .9);
+            box-shadow: 0 0 0 3px rgba(200, 29, 17, .22), 0 0 26px rgba(245, 158, 11, .28), 0 8px 24px rgba(0, 0, 0, .4);
+            animation: brandLogoGlow 3.4s ease-in-out infinite;
+        }
+        .brand-logo-frame img { width: 100%; height: 100%; object-fit: contain; border-radius: .75rem; }
+        @keyframes brandLogoGlow {
+            0%, 100% { box-shadow: 0 0 0 3px rgba(200, 29, 17, .22), 0 0 22px rgba(245, 158, 11, .22), 0 8px 24px rgba(0, 0, 0, .4); }
+            50% { box-shadow: 0 0 0 5px rgba(200, 29, 17, .15), 0 0 34px rgba(245, 158, 11, .42), 0 10px 30px rgba(0, 0, 0, .5); }
+        }
+
+        .wheel-stage { isolation: isolate; filter: drop-shadow(0 12px 30px rgba(0, 0, 0, .35)); }
+        .wheel-stage::before {
+            content: ""; position: absolute; inset: -11px; z-index: -1; border-radius: 50%;
+            border: 1px solid rgba(253, 230, 138, .62);
+            box-shadow: 0 0 18px rgba(245, 158, 11, .18), inset 0 0 18px rgba(200, 29, 17, .12);
+            pointer-events: none; animation: wheelRing 24s linear infinite;
+        }
+        .wheel-stage::after {
+            content: "✦"; position: absolute; top: -19px; right: 13%; z-index: 2;
+            color: #fde68a; font-size: 1.1rem; text-shadow: 0 0 12px rgba(245, 158, 11, .95);
+            pointer-events: none; animation: starFloat 3.2s ease-in-out infinite;
+        }
+        .wheel-stage.is-spinning::before {
+            border-color: rgba(255, 243, 176, .95);
+            box-shadow: 0 0 28px rgba(245, 158, 11, .48), 0 0 58px rgba(200, 29, 17, .35), inset 0 0 22px rgba(245, 158, 11, .18);
+            animation-duration: 2.8s;
+        }
+        .wheel-stage.is-spinning::after {
+            color: #fff7c2; text-shadow: 0 0 8px #fff, 0 0 22px #f59e0b; animation-duration: .65s;
+        }
+        @keyframes wheelRing { to { transform: rotate(360deg); } }
+        @keyframes starFloat {
+            0%, 100% { transform: translateY(0) scale(.85); opacity: .65; }
+            50% { transform: translateY(-8px) scale(1.25); opacity: 1; }
+        }
+        .wheel-kicker {
+            display: flex; align-items: center; justify-content: center; gap: .65rem; margin-bottom: .8rem;
+            color: #fcd77a; font-size: .68rem; font-weight: 800; letter-spacing: .26em;
+            text-align: center; text-transform: uppercase; text-shadow: 0 0 14px rgba(245, 158, 11, .35);
+        }
+        .wheel-kicker::before, .wheel-kicker::after {
+            content: ""; width: clamp(20px, 7vw, 54px); height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(251, 191, 36, .85));
+        }
+        .wheel-kicker::after { transform: rotate(180deg); }
+        .modal-brand-logo {
+            width: 4.25rem; height: 4.25rem; object-fit: contain; margin: 0 auto 1rem; padding: .28rem;
+            border-radius: 1.1rem; background: #fff; border: 2px solid #fbbf24;
+            box-shadow: 0 0 28px rgba(245, 158, 11, .28), 0 6px 18px rgba(0, 0, 0, .35);
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .ambient-backdrop::before, .ambient-backdrop::after, .brand-logo-frame,
+            .wheel-stage::before, .wheel-stage::after { animation: none !important; }
+        }
+
+        /* Halo lumineux rouge et or derrière la roue */
+        .wheel-glow {
+            box-shadow:
+                0 0 65px rgba(200, 29, 17, 0.45),
+                0 0 25px rgba(245, 158, 11, 0.25),
+                inset 0 0 28px rgba(0, 0, 0, 0.65);
+        }
+
+        /* Animation du pointeur lorsqu'un clou passe */
+        @keyframes pointerTick {
+            0% { transform: translateX(-50%) rotate(0deg); }
+            40% { transform: translateX(-50%) rotate(-24deg); }
+            100% { transform: translateX(-50%) rotate(0deg); }
+        }
+
+        .pointer-animate {
+            animation: pointerTick 0.12s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        /* Pulsation subtile du médaillon central EL PATRÓN */
+        @keyframes hubPulse {
+            0%, 100% {
+                transform: translate(-50%, -50%) scale(1);
+                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.75), 0 0 0 0 rgba(200, 29, 17, 0.65);
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.035);
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 0 12px rgba(200, 29, 17, 0);
+            }
+        }
+
+        .hub-pulse {
+            animation: hubPulse 2.6s infinite;
+        }
+
+        /* Apparition de la modale */
+        @keyframes modalPop {
+            0% { opacity: 0; transform: scale(0.86) translateY(18px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .modal-enter {
+            animation: modalPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        /* Scrollbar discrète */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(200, 29, 17, 0.65);
+            border-radius: 9999px;
+        }
