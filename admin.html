@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex,nofollow">
+    <title>Administration — EL PATRÓN</title>
+    <link rel="icon" type="image/png" href="./LOGO%20EL%20PATRON%20ROUGE.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./admin.css">
+</head>
+<body>
+    <main class="admin-shell">
+        <header class="admin-header">
+            <div class="admin-brand">
+                <img src="./LOGO%20EL%20PATRON%20ROUGE.png" alt="EL PATRÓN">
+                <div>
+                    <p class="admin-kicker">EL PATRÓN · RESTAURANT - CAFÉ</p>
+                    <h1>Gestion des participants</h1>
+                </div>
+            </div>
+            <a class="admin-back" href="./index.html">← Retour au jeu</a>
+        </header>
+
+        <section id="loginPanel" class="login-card">
+            <p class="admin-kicker">Espace réservé à l'équipe</p>
+            <h2>Connexion administrateur</h2>
+            <p>Connectez-vous pour consulter les contacts et les participations enregistrés.</p>
+            <form id="loginForm">
+                <label for="adminPassword">Mot de passe</label>
+                <input id="adminPassword" type="password" autocomplete="current-password" required>
+                <button id="loginButton" type="submit">Se connecter</button>
+                <p id="loginStatus" class="admin-status" role="status" aria-live="polite"></p>
+            </form>
+        </section>
+
+        <section id="dashboard" class="dashboard" hidden>
+            <div class="dashboard-topline">
+                <div>
+                    <p class="admin-kicker">Vue d'ensemble</p>
+                    <h2>Tableau de bord</h2>
+                </div>
+                <div class="dashboard-actions">
+                    <button id="refreshButton" class="button-secondary" type="button">Actualiser</button>
+                    <button id="exportButton" class="button-secondary" type="button">Exporter les contacts CSV</button>
+                    <button id="logoutButton" class="button-logout" type="button">Déconnexion</button>
+                </div>
+            </div>
+
+            <p id="dashboardStatus" class="admin-status" role="status" aria-live="polite"></p>
+
+            <div class="stats-grid">
+                <article class="stat-card"><span>Contacts inscrits</span><strong id="totalCustomers">0</strong></article>
+                <article class="stat-card"><span>Participations</span><strong id="totalSpins">0</strong></article>
+                <article class="stat-card"><span>Cadeaux gagnés</span><strong id="totalWins">0</strong></article>
+            </div>
+
+            <section class="panel">
+                <div class="panel-heading">
+                    <div><p class="admin-kicker">Base de contacts</p><h3>Participants</h3></div>
+                    <form id="searchForm" class="search-form">
+                        <input id="searchInput" type="search" placeholder="Nom, téléphone ou e-mail" aria-label="Rechercher un participant">
+                        <button type="submit">Rechercher</button>
+                    </form>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>Participant</th><th>Téléphone</th><th>E-mail</th><th>Participations</th><th>Gains</th><th>Offres</th><th>Inscription</th></tr></thead>
+                        <tbody id="customersTable"><tr><td colspan="7" class="empty-cell">Chargement…</td></tr></tbody>
+                    </table>
+                </div>
+                <p id="truncatedNotice" class="table-note" hidden>Affichage limité aux 2 000 contacts les plus récents. Utilisez la recherche pour retrouver un contact plus ancien.</p>
+            </section>
+
+            <section class="panel">
+                <div class="panel-heading">
+                    <div><p class="admin-kicker">Journal des tirages</p><h3>Dernières participations</h3></div>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>Date</th><th>Participant</th><th>Téléphone</th><th>Résultat</th><th>Validation</th></tr></thead>
+                        <tbody id="spinsTable"><tr><td colspan="5" class="empty-cell">Chargement…</td></tr></tbody>
+                    </table>
+                </div>
+            </section>
+            <p class="dashboard-footnote">Les données personnelles sont réservées au personnel autorisé de EL PATRÓN. Ne partagez pas cet espace ni les exports sans raison légitime.</p>
+        </section>
+    </main>
+    <script src="./admin.js"></script>
+</body>
+</html>
