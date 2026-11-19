@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EL PATRÓN - Roue de la Fortune</title>
+    <link rel="icon" type="image/png" href="./LOGO%20EL%20PATRON%20ROUGE.png">
     <!-- Tailwind CSS pour un design responsive moderne -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts : Outfit & Oswald pour un style affirmé assorti au logo EL PATRÓN -->
@@ -31,6 +32,81 @@
         .font-patron {
             font-family: 'Oswald', sans-serif;
             letter-spacing: 0.04em;
+        }
+
+        /* Ambiance premium EL PATRÓN */
+        .ambient-backdrop {
+            position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+            background:
+                radial-gradient(ellipse at 50% 42%, rgba(200, 29, 17, .17), transparent 42%),
+                radial-gradient(ellipse at 12% 12%, rgba(245, 158, 11, .10), transparent 28%),
+                radial-gradient(ellipse at 88% 78%, rgba(200, 29, 17, .12), transparent 32%);
+        }
+        .ambient-backdrop::before, .ambient-backdrop::after {
+            content: ""; position: absolute; inset: -35%;
+            background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, rgba(245, 158, 11, .055) 42deg, transparent 92deg, rgba(200, 29, 17, .07) 165deg, transparent 225deg);
+            animation: ambientDrift 32s linear infinite;
+        }
+        .ambient-backdrop::after { inset: -15%; opacity: .55; filter: blur(55px); animation-duration: 48s; animation-direction: reverse; }
+        @keyframes ambientDrift { to { transform: rotate(360deg); } }
+
+        .brand-logo-frame {
+            position: relative; width: 3.5rem; height: 3.5rem; flex: 0 0 auto;
+            display: grid; place-items: center; padding: .22rem; overflow: hidden;
+            border-radius: 1.1rem; background: linear-gradient(145deg, #fff 0%, #f8fafc 72%, #fef3c7 100%);
+            border: 2px solid rgba(251, 191, 36, .9);
+            box-shadow: 0 0 0 3px rgba(200, 29, 17, .22), 0 0 26px rgba(245, 158, 11, .28), 0 8px 24px rgba(0, 0, 0, .4);
+            animation: brandLogoGlow 3.4s ease-in-out infinite;
+        }
+        .brand-logo-frame img { width: 100%; height: 100%; object-fit: contain; border-radius: .75rem; }
+        @keyframes brandLogoGlow {
+            0%, 100% { box-shadow: 0 0 0 3px rgba(200, 29, 17, .22), 0 0 22px rgba(245, 158, 11, .22), 0 8px 24px rgba(0, 0, 0, .4); }
+            50% { box-shadow: 0 0 0 5px rgba(200, 29, 17, .15), 0 0 34px rgba(245, 158, 11, .42), 0 10px 30px rgba(0, 0, 0, .5); }
+        }
+
+        .wheel-stage { isolation: isolate; filter: drop-shadow(0 12px 30px rgba(0, 0, 0, .35)); }
+        .wheel-stage::before {
+            content: ""; position: absolute; inset: -11px; z-index: -1; border-radius: 50%;
+            border: 1px solid rgba(253, 230, 138, .62);
+            box-shadow: 0 0 18px rgba(245, 158, 11, .18), inset 0 0 18px rgba(200, 29, 17, .12);
+            pointer-events: none; animation: wheelRing 24s linear infinite;
+        }
+        .wheel-stage::after {
+            content: "✦"; position: absolute; top: -19px; right: 13%; z-index: 2;
+            color: #fde68a; font-size: 1.1rem; text-shadow: 0 0 12px rgba(245, 158, 11, .95);
+            pointer-events: none; animation: starFloat 3.2s ease-in-out infinite;
+        }
+        .wheel-stage.is-spinning::before {
+            border-color: rgba(255, 243, 176, .95);
+            box-shadow: 0 0 28px rgba(245, 158, 11, .48), 0 0 58px rgba(200, 29, 17, .35), inset 0 0 22px rgba(245, 158, 11, .18);
+            animation-duration: 2.8s;
+        }
+        .wheel-stage.is-spinning::after {
+            color: #fff7c2; text-shadow: 0 0 8px #fff, 0 0 22px #f59e0b; animation-duration: .65s;
+        }
+        @keyframes wheelRing { to { transform: rotate(360deg); } }
+        @keyframes starFloat {
+            0%, 100% { transform: translateY(0) scale(.85); opacity: .65; }
+            50% { transform: translateY(-8px) scale(1.25); opacity: 1; }
+        }
+        .wheel-kicker {
+            display: flex; align-items: center; justify-content: center; gap: .65rem; margin-bottom: .8rem;
+            color: #fcd77a; font-size: .68rem; font-weight: 800; letter-spacing: .26em;
+            text-align: center; text-transform: uppercase; text-shadow: 0 0 14px rgba(245, 158, 11, .35);
+        }
+        .wheel-kicker::before, .wheel-kicker::after {
+            content: ""; width: clamp(20px, 7vw, 54px); height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(251, 191, 36, .85));
+        }
+        .wheel-kicker::after { transform: rotate(180deg); }
+        .modal-brand-logo {
+            width: 4.25rem; height: 4.25rem; object-fit: contain; margin: 0 auto 1rem; padding: .28rem;
+            border-radius: 1.1rem; background: #fff; border: 2px solid #fbbf24;
+            box-shadow: 0 0 28px rgba(245, 158, 11, .28), 0 6px 18px rgba(0, 0, 0, .35);
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .ambient-backdrop::before, .ambient-backdrop::after, .brand-logo-frame,
+            .wheel-stage::before, .wheel-stage::after { animation: none !important; }
         }
 
         /* Halo lumineux rouge et or derrière la roue */
@@ -93,23 +169,14 @@
     </style>
 </head>
 <body class="min-h-screen flex flex-col justify-between items-center p-3 sm:p-6 relative">
+    <div class="ambient-backdrop" aria-hidden="true"></div>
 
     <!-- En-tête aux couleurs EL PATRÓN -->
     <header class="w-full max-w-4xl flex items-center justify-between z-10 mb-2">
         <div class="flex items-center gap-3">
-            <!-- Petit badge blanc avec mini-broche rouge EL PATRÓN -->
-            <div class="w-11 h-11 sm:w-13 sm:h-13 rounded-2xl bg-white flex items-center justify-center shadow-lg border-2 border-[#C81D11] p-1 shrink-0">
-                <svg viewBox="0 0 120 120" class="w-full h-full" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                    <!-- Broche centrale -->
-                    <polygon points="60,6 63,26 57,26" fill="#C81D11"/>
-                    <rect x="57" y="84" width="6" height="22" fill="#C81D11"/>
-                    <ellipse cx="60" cy="96" rx="22" ry="3" fill="#C81D11"/>
-                    <!-- Flamme gauche -->
-                    <path d="M43 85 C27 78, 22 60, 27 45 C29 53, 33 55, 33 47 C32 37, 37 29, 41 25 C39 33, 42 38, 44 35 Z" fill="#C81D11"/>
-                    <!-- Broche de viande -->
-                    <path d="M42 28 C42 22, 78 22, 78 28 L74 80 C74 85, 46 85, 46 80 Z" fill="#C81D11"/>
-                    <path d="M45 36 Q60 33 75 36 M46 46 Q60 49 74 46 M47 58 Q60 55 73 58 M48 69 Q60 72 72 69" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-                </svg>
+            <!-- Logo officiel EL PATRÓN -->
+            <div class="brand-logo-frame">
+                <img src="./LOGO%20EL%20PATRON%20ROUGE.png" alt="Logo officiel EL PATRÓN Restaurant - Café">
             </div>
             <div>
                 <h1 class="font-patron text-2xl sm:text-3xl font-bold text-white tracking-wider leading-none uppercase">
@@ -146,8 +213,11 @@
     <!-- Section Principale : La Roue de la Fortune -->
     <main class="flex-1 w-full max-w-3xl flex flex-col items-center justify-center my-2 sm:my-3 relative z-10">
 
+        <!-- Signature du jeu -->
+        <div class="wheel-kicker">Le grand jeu EL PATRÓN</div>
+
         <!-- Conteneur responsive de la roue -->
-        <div id="wheelContainer" class="relative w-[88vw] h-[88vw] max-w-[460px] max-h-[460px] sm:max-w-[520px] sm:max-h-[520px] flex items-center justify-center">
+        <div id="wheelContainer" class="wheel-stage relative w-[88vw] h-[88vw] max-w-[460px] max-h-[460px] sm:max-w-[520px] sm:max-h-[520px] flex items-center justify-center">
 
             <!-- Pointeur supérieur (Flèche dorée et rouge) -->
             <div id="wheelPointer" style="transform-origin: 50% 18%;" class="absolute -top-4 sm:-top-5 left-1/2 -translate-x-1/2 z-30 pointer-events-none drop-shadow-[0_6px_10px_rgba(0,0,0,0.75)]">
@@ -172,7 +242,7 @@
                 <button id="spinCenterBtn" aria-label="Tourner la roue EL PATRÓN" class="hub-pulse absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[31%] h-[31%] min-w-[104px] min-h-[104px] max-w-[156px] max-h-[156px] rounded-full bg-white border-[4px] sm:border-[5px] border-[#C81D11] shadow-[0_8px_28px_rgba(0,0,0,0.8)] flex items-center justify-center p-1.5 sm:p-2 transition active:scale-95 z-20 cursor-pointer overflow-hidden">
                     
                     <!-- Image chargée si LOGO EL PATRON ROUGE.png est présent dans le dossier ou sélectionné -->
-                    <img id="hubLogoImg" src="LOGO EL PATRON ROUGE.png" alt="Logo EL PATRÓN Restaurant - Café" class="w-full h-full object-contain hidden pointer-events-none select-none" />
+                    <img id="hubLogoImg" src="./LOGO%20EL%20PATRON%20ROUGE.png" alt="Logo EL PATRÓN Restaurant - Café" class="w-full h-full object-contain hidden pointer-events-none select-none" />
 
                     <!-- Reproduction vectorielle haute fidélité du logo EL PATRÓN - RESTAURANT - CAFÉ -->
                     <svg id="hubLogoSvg" viewBox="0 0 220 220" class="w-full h-full pointer-events-none select-none" xmlns="http://www.w3.org/2000/svg">
@@ -237,6 +307,7 @@
         <div id="resultCard" class="modal-enter w-full max-w-md rounded-3xl bg-gradient-to-b from-neutral-900 to-neutral-950 border-2 border-[#C81D11] p-6 sm:p-8 text-center shadow-2xl relative overflow-hidden">
 
             <div id="modalBannerGlow" class="absolute -top-24 left-1/2 -translate-x-1/2 w-64 h-64 rounded-full bg-[#C81D11]/30 blur-3xl pointer-events-none"></div>
+            <img class="modal-brand-logo" src="./LOGO%20EL%20PATRON%20ROUGE.png" alt="EL PATRÓN Restaurant - Café">
 
             <!-- Icône principale -->
             <div id="modalEmoji" class="w-20 h-20 mx-auto rounded-3xl bg-[#C81D11]/20 border border-[#C81D11]/60 flex items-center justify-center text-5xl mb-4 shadow-inner">
@@ -416,6 +487,7 @@
         const ARC_ANGLE = (2 * Math.PI) / NUM_SEGMENTS;
 
         // Références DOM
+        const wheelContainer = document.getElementById('wheelContainer');
         const canvas = document.getElementById('wheelCanvas');
         const ctx = canvas.getContext('2d');
         const wheelPointer = document.getElementById('wheelPointer');
@@ -651,6 +723,7 @@
 
             initAudio();
             isSpinning = true;
+            wheelContainer.classList.add('is-spinning');
 
             spinMainBtn.disabled = true;
             spinMainBtn.classList.add('opacity-60', 'cursor-not-allowed');
@@ -712,6 +785,7 @@
          */
         function finishSpin(winningIndex) {
             isSpinning = false;
+            wheelContainer.classList.remove('is-spinning');
             spinMainBtn.disabled = false;
             spinMainBtn.classList.remove('opacity-60', 'cursor-not-allowed');
             spinCenterBtn.classList.add('hub-pulse');
