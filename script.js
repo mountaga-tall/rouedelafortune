@@ -408,7 +408,18 @@
                             spinCenterBtn.disabled = false;
                             spinCenterBtn.classList.add('hub-pulse');
                             const status = document.getElementById('gameStatus');
-                            if (status) status.textContent = "Le résultat de la roue n'est pas aligné. Aucun gain n'a été enregistré. Réessayez.";
+                            if (status) status.textContent = "";
+
+                            modalBannerGlow.className = "absolute -top-24 left-1/2 -translate-x-1/2 w-64 h-64 rounded-full bg-amber-500/20 blur-3xl pointer-events-none";
+                            modalEmoji.textContent = "⚠️";
+                            modalEmoji.className = "w-20 h-20 mx-auto rounded-3xl bg-amber-500/15 border border-amber-400/40 flex items-center justify-center text-5xl mb-4 shadow-inner";
+                            modalTitle.textContent = "TIRAGE NON VALIDÉ";
+                            modalTitle.className = "font-patron text-3xl sm:text-4xl font-bold text-amber-200 uppercase tracking-wide mb-2";
+                            modalPrizeBox.className = "my-4 py-3.5 px-4 rounded-2xl bg-white/5 border border-amber-400/30";
+                            modalPrizeName.textContent = "Veuillez réessayer";
+                            modalMessage.textContent = "Ce tour n'a pas été validé. Aucun cadeau n'a été enregistré.";
+                            validationTicket.classList.add('hidden');
+                            openResultModal();
                             return;
                         }
 
@@ -513,7 +524,7 @@
                 modalBannerGlow.className = "absolute -top-24 left-1/2 -translate-x-1/2 w-64 h-64 rounded-full bg-emerald-500/30 blur-3xl pointer-events-none";
                 modalEmoji.textContent = segment.icon;
                 modalEmoji.className = "w-20 h-20 mx-auto rounded-3xl bg-emerald-500/20 border border-emerald-400/50 flex items-center justify-center text-5xl mb-4 shadow-inner";
-                modalTitle.textContent = persisted ? "Félicitations ! 🎉" : "Bravo !";
+                modalTitle.textContent = persisted ? "GAGNÉ ! 🎉" : "GAIN À CONFIRMER";
                 modalTitle.className = "font-patron text-3xl sm:text-4xl font-bold text-emerald-300 uppercase tracking-wide mb-2";
 
                 modalPrizeBox.className = "my-4 py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-500/20 via-amber-500/25 to-emerald-500/20 border border-emerald-400/50";
@@ -533,7 +544,7 @@
                 modalBannerGlow.className = "absolute -top-24 left-1/2 -translate-x-1/2 w-64 h-64 rounded-full bg-[#C81D11]/25 blur-3xl pointer-events-none";
                 modalEmoji.textContent = "😊";
                 modalEmoji.className = "w-20 h-20 mx-auto rounded-3xl bg-white/10 border border-white/20 flex items-center justify-center text-5xl mb-4 shadow-inner";
-                modalTitle.textContent = "Pas de chance !";
+                modalTitle.textContent = "PERDU !";
                 modalTitle.className = "font-patron text-3xl sm:text-4xl font-bold text-amber-200 uppercase tracking-wide mb-2";
 
                 modalPrizeBox.className = "my-4 py-3.5 px-4 rounded-2xl bg-white/5 border border-white/15";
