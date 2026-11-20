@@ -119,18 +119,33 @@ export default async function handler(req, res) {
       const targetIndex = eligibleIndices[randomInt(eligibleIndices.length)];
       const selected = segments[targetIndex];
 
-      const inserted = await sql`
-        INSERT INTO spin_challenges (
-          id, customer_id, segments, target_index, prize_label, prize_icon,
-          is_win, spin_number
-        )
-        VALUES (
-          ${challengeId}::uuid, ${customerId}::uuid, ${JSON.stringify(segments)}::jsonb,
-          ${targetIndex}, ${selected.label}, ${selected.icon},
-          ${isWinningTurn}, ${spinNumber}
-        )
-        RETURNING expires_at
-      `;
+      let inserted;
+      try {
+        inserted = await sql`
+          INSERT INTO spin_challenges (
+            id, customer_id, segments, target_index, prize_label, prize_icon,
+            is_win, spin_number
+          )
+          VALUES (
+            ${challengeId}::uuid, ${customerId}::uuid, ${JSON.stringify(segments)}::jsonb,
+            ${targetIndex}, ${selected.label}, ${selected.icon},
+            ${isWinningTurn}, ${spinNumber}
+          )
+          RETURNING expires_at
+        `;
+      } catch (error) {
+        // Si la création échoue, libère immédiatement le lot réservé pour ne pas bloquer la roue.
+        if (isWinningTurn) {
+          await sql`
+            UPDATE game_state
+            SET pending_winning_challenge = NULL,
+                pending_winning_expires_at = NULL,
+                updated_at = NOW()
+            WHERE id = 1 AND pending_winning_challenge = ${challengeId}::uuid
+          `;
+        }
+        throw error;
+      }
 
       return json(res, 201, {
         ok: true,
