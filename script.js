@@ -31,8 +31,8 @@
         });
 
         /**
-         * RÉPARTITION ÉQUILIBRÉE DES 18 SECTEURS
-         * Les 10 cases "Pas de chance" sont espacées au mieux entre les 8 cadeaux.
+         * RÉPARTITION ÉQUILIBRÉE DES 32 SECTEURS
+         * 8 cadeaux et exactement 3 cases "Pas de chance" entre chaque cadeau.
          */
         const WINNING_PRIZES = [
             { label: "Un plat de frites", wheelLabel: "Plat de frites", isWin: true, icon: "🍟", bg: "#d97706", text: "#ffffff" },
@@ -61,29 +61,20 @@
 
         function buildBalancedRandomSegments() {
             const orderedPrizes = shuffleArray(WINNING_PRIZES.map(prize => ({ ...prize })));
-            const losingSectors = shuffleArray(Array.from({ length: 10 }, (_, index) => ({
+            const losingSectors = shuffleArray(Array.from({ length: 24 }, (_, index) => ({
                 ...LOSE_STYLES[index % LOSE_STYLES.length]
             })));
 
-            // Répartit les cases perdantes entre les cadeaux. Avec 10 pertes et 8 cadeaux,
-            // six intervalles contiennent une perte et deux intervalles en contiennent deux.
-            const lossesPerGap = Math.floor(losingSectors.length / orderedPrizes.length);
-            const extraLossGaps = losingSectors.length % orderedPrizes.length;
-            const gapOffset = Math.floor(Math.random() * orderedPrizes.length);
-            const extraGapIndexes = new Set(
-                Array.from({ length: extraLossGaps }, (_, index) =>
-                    (gapOffset + Math.floor(index * orderedPrizes.length / extraLossGaps)) % orderedPrizes.length
-                )
-            );
-
+            // 3 cases « Pas de chance » sont placées après chacun des 8 cadeaux.
             const segments = [];
             let losingIndex = 0;
-            orderedPrizes.forEach((prize, index) => {
+            orderedPrizes.forEach(prize => {
                 segments.push(prize);
-                const gapSize = lossesPerGap + (extraGapIndexes.has(index) ? 1 : 0);
-                for (let count = 0; count < gapSize; count++) {
-                    segments.push(losingSectors[losingIndex++]);
-                }
+                segments.push(
+                    losingSectors[losingIndex++],
+                    losingSectors[losingIndex++],
+                    losingSectors[losingIndex++]
+                );
             });
 
             return segments;
@@ -553,13 +544,28 @@
                 validationTicket.classList.add('hidden');
             }
 
+            openResultModal();
+        }
+
+        // Le pop-up s'ouvre automatiquement après chaque tirage : cadeau, perte ou erreur.
+        function openResultModal() {
+            resultModal.setAttribute('aria-hidden', 'false');
             resultModal.classList.remove('hidden');
             resultModal.classList.add('flex');
-            // Rejoue l'entrée premium à chaque résultat, pas seulement au premier tour.
+
+            // Rejoue l'animation premium à chaque tirage et place le focus sur Fermer.
             const resultCard = document.getElementById('resultCard');
             resultCard.classList.remove('modal-enter');
             void resultCard.offsetWidth;
             resultCard.classList.add('modal-enter');
+            closeModalBtn.focus({ preventScroll: true });
+        }
+
+        function closeResultModal() {
+            resultModal.setAttribute('aria-hidden', 'true');
+            resultModal.classList.add('hidden');
+            resultModal.classList.remove('flex');
+            spinMainBtn.focus({ preventScroll: true });
         }
 
         function launchConfetti() {
@@ -637,9 +643,12 @@
         spinCenterBtn.addEventListener('click', spinWheel);
         canvas.addEventListener('click', spinWheel);
 
-        closeModalBtn.addEventListener('click', () => {
-            resultModal.classList.add('hidden');
-            resultModal.classList.remove('flex');
+        closeModalBtn.addEventListener('click', closeResultModal);
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && !resultModal.classList.contains('hidden')) {
+                closeResultModal();
+            }
         });
 
         soundToggleBtn.addEventListener('click', () => {
