@@ -36,10 +36,13 @@
          * avec ordre des lots mélangé aléatoirement et décalage de départ aléatoire.
          */
         const WINNING_PRIZES = [
-            { label: "Un fresco", isWin: true, icon: "🥤", bg: "#059669", text: "#ffffff" },
-            { label: "Une portion de frite", isWin: true, icon: "🍟", bg: "#d97706", text: "#ffffff" },
-            { label: "Un demi poulet rôti", isWin: true, icon: "🍗", bg: "#C81D11", text: "#ffffff" },
-            { label: "Un chawarma", isWin: true, icon: "🌯", bg: "#7c3aed", text: "#ffffff" }
+            { label: "Un plat de frites", isWin: true, icon: "🍟", bg: "#d97706", text: "#ffffff" },
+            { label: "Une petite bouteille d'eau", isWin: true, icon: "💧", bg: "#0284c7", text: "#ffffff" },
+            { label: "Un chawarma", isWin: true, icon: "🌯", bg: "#7c3aed", text: "#ffffff" },
+            { label: "Une boule de glace", isWin: true, icon: "🍨", bg: "#db2777", text: "#ffffff" },
+            { label: "Une pizza moyenne", isWin: true, icon: "🍕", bg: "#b91c1c", text: "#ffffff" },
+            { label: "Un demi poulet au choix", isWin: true, icon: "🍗", bg: "#C81D11", text: "#ffffff" },
+            { label: "Une canette non alcoolisée", isWin: true, icon: "🥤", bg: "#059669", text: "#ffffff" }
         ];
 
         const LOSE_STYLES = [
@@ -57,31 +60,13 @@
         }
 
         function buildBalancedRandomSegments() {
-            const totalSlots = 14;
-            const shuffledPrizes = shuffleArray(WINNING_PRIZES);
-
-            // Positions équidistantes sur 14 parts : espacements de 3, 4, 3, 4 parts (soit 2 ou 3 "Pas de chance" entre chaque gain)
-            const baseWinPositions = [0, 3, 7, 10];
-            const randomShift = Math.floor(Math.random() * totalSlots);
-            const winSlotMap = new Map();
-
-            baseWinPositions.forEach((pos, idx) => {
-                const shiftedPos = (pos + randomShift) % totalSlots;
-                winSlotMap.set(shiftedPos, shuffledPrizes[idx]);
-            });
-
-            const segments = [];
-            let loseCounter = 0;
-            for (let i = 0; i < totalSlots; i++) {
-                if (winSlotMap.has(i)) {
-                    segments.push(winSlotMap.get(i));
-                } else {
-                    const style = LOSE_STYLES[loseCounter % LOSE_STYLES.length];
-                    segments.push({ ...style });
-                    loseCounter++;
-                }
-            }
-            return segments;
+            const losingSectors = Array.from({ length: 7 }, (_, index) => ({
+                ...LOSE_STYLES[index % LOSE_STYLES.length]
+            }));
+            return shuffleArray([
+                ...WINNING_PRIZES.map(prize => ({ ...prize })),
+                ...losingSectors
+            ]);
         }
 
         let SEGMENTS = buildBalancedRandomSegments();
@@ -390,7 +375,32 @@
                     if (progress < 1) {
                         requestAnimationFrame(animate);
                     } else {
-                        finishSpin(challenge.targetIndex);
+                        // Fixe exactement l'angle final, redessine, puis vérifie la case sous l'aiguille.
+                        currentRotation = targetRotation;
+                        const finalRect = canvas.parentElement.getBoundingClientRect();
+                        if (finalRect.width > 0 && finalRect.height > 0) {
+                            const dpr = window.devicePixelRatio || 1;
+                            ctx.save();
+                            ctx.scale(dpr, dpr);
+                            drawWheel(finalRect.width, finalRect.height);
+                            ctx.restore();
+                        }
+
+                        const visibleIndex = getCurrentSegmentIndex(currentRotation);
+                        if (visibleIndex !== challenge.targetIndex) {
+                            isSpinning = false;
+                            activeSpinChallenge = null;
+                            wheelContainer.classList.remove('is-spinning');
+                            spinMainBtn.disabled = false;
+                            spinMainBtn.classList.remove('opacity-60', 'cursor-not-allowed');
+                            spinCenterBtn.disabled = false;
+                            spinCenterBtn.classList.add('hub-pulse');
+                            const status = document.getElementById('gameStatus');
+                            if (status) status.textContent = "Le résultat de la roue n'est pas aligné. Aucun gain n'a été enregistré. Réessayez.";
+                            return;
+                        }
+
+                        finishSpin(visibleIndex);
                     }
                 }
 
@@ -434,6 +444,13 @@
                 });
                 const payload = await response.json();
                 if (!response.ok) throw new Error(payload.error || 'Enregistrement impossible.');
+                if (
+                    Number(payload.targetIndex) !== winningIndex ||
+                    payload.label !== segment.label ||
+                    Boolean(payload.isWin) !== Boolean(segment.isWin)
+                ) {
+                    throw new Error("Le résultat enregistré ne correspond pas à la case sous l'aiguille.");
+                }
                 persisted = true;
                 segment.label = payload.label;
                 segment.icon = payload.icon;
@@ -456,15 +473,28 @@
             spinCenterBtn.disabled = false;
             spinCenterBtn.classList.add('hub-pulse');
 
-            recordHistory({
-                label: segment.label,
-                icon: segment.icon,
-                isWin: segment.isWin,
-                time: timeStr,
-                code: validationId
-            });
+            if (persisted) {
+                recordHistory({
+                    label: segment.label,
+                    icon: segment.icon,
+                    isWin: segment.isWin,
+                    time: timeStr,
+                    code: validationId
+                });
+            }
 
-            if (segment.isWin) {
+            if (!persisted) {
+                playLoseSound();
+                modalBannerGlow.className = "absolute -top-24 left-1/2 -translate-x-1/2 w-64 h-64 rounded-full bg-amber-500/20 blur-3xl pointer-events-none";
+                modalEmoji.textContent = "⚠️";
+                modalEmoji.className = "w-20 h-20 mx-auto rounded-3xl bg-amber-500/15 border border-amber-400/40 flex items-center justify-center text-5xl mb-4 shadow-inner";
+                modalTitle.textContent = "Tirage non validé";
+                modalTitle.className = "font-patron text-3xl sm:text-4xl font-bold text-amber-200 uppercase tracking-wide mb-2";
+                modalPrizeBox.className = "my-4 py-3.5 px-4 rounded-2xl bg-white/5 border border-amber-400/30";
+                modalPrizeName.textContent = "Résultat à vérifier";
+                modalMessage.textContent = "Le serveur n'a pas pu confirmer ce tirage. Aucun cadeau ne peut être remis sur la base de cet écran. Prévenez l'équipe EL PATRÓN.";
+                validationTicket.classList.add('hidden');
+            } else if (segment.isWin) {
                 playWinSound();
                 launchConfetti();
 
