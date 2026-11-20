@@ -48,9 +48,29 @@ export default async function handler(req, res) {
         (SELECT COUNT(*)::int FROM spins) AS spins,
         (SELECT COUNT(*)::int FROM spins WHERE is_win = TRUE) AS wins
     `;
+    const gameRows = await sql`
+      SELECT total_spins, spins_since_last_win,
+             (pending_winning_challenge IS NOT NULL AND pending_winning_expires_at > NOW()) AS prize_pending
+      FROM game_state
+      WHERE id = 1
+    `;
+    const gameState = gameRows[0] || {
+      total_spins: 0,
+      spins_since_last_win: 0,
+      prize_pending: false
+    };
+    const spinsSinceLastWin = Number(gameState.spins_since_last_win || 0);
+    const game = {
+      totalSpins: Number(gameState.total_spins || 0),
+      spinsSinceLastWin,
+      prizePending: Boolean(gameState.prize_pending),
+      spinsUntilNextPrize: gameState.prize_pending
+        ? 0
+        : Math.max(0, 50 - spinsSinceLastWin)
+    };
 
     const recentSpins = await sql`
-      SELECT s.id, s.prize_label, s.prize_icon, s.is_win, s.validation_code, s.played_at,
+      SELECT s.id, s.prize_label, s.prize_icon, s.is_win, s.validation_code, s.spin_number, s.played_at,
              c.first_name, c.last_name, c.phone
       FROM spins s
       JOIN customers c ON c.id = s.customer_id
@@ -60,6 +80,7 @@ export default async function handler(req, res) {
 
     return json(res, 200, {
       totals: totals[0],
+      game,
       customers,
       recentSpins,
       truncated: customers.length === 2000
