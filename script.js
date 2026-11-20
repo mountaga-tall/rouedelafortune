@@ -36,13 +36,13 @@
          * avec ordre des lots mélangé aléatoirement et décalage de départ aléatoire.
          */
         const WINNING_PRIZES = [
-            { label: "Un plat de frites", isWin: true, icon: "🍟", bg: "#d97706", text: "#ffffff" },
-            { label: "Une petite bouteille d'eau", isWin: true, icon: "💧", bg: "#0284c7", text: "#ffffff" },
-            { label: "Un chawarma", isWin: true, icon: "🌯", bg: "#7c3aed", text: "#ffffff" },
-            { label: "Une boule de glace", isWin: true, icon: "🍨", bg: "#db2777", text: "#ffffff" },
-            { label: "Une pizza moyenne", isWin: true, icon: "🍕", bg: "#b91c1c", text: "#ffffff" },
-            { label: "Un demi poulet au choix", isWin: true, icon: "🍗", bg: "#C81D11", text: "#ffffff" },
-            { label: "Une canette non alcoolisée", isWin: true, icon: "🥤", bg: "#059669", text: "#ffffff" }
+            { label: "Un plat de frites", wheelLabel: "Plat de frites", isWin: true, icon: "🍟", bg: "#d97706", text: "#ffffff" },
+            { label: "Une petite bouteille d'eau", wheelLabel: "Bouteille d'eau", isWin: true, icon: "💧", bg: "#0284c7", text: "#ffffff" },
+            { label: "Un chawarma", wheelLabel: "Chawarma", isWin: true, icon: "🌯", bg: "#7c3aed", text: "#ffffff" },
+            { label: "Une boule de glace", wheelLabel: "Boule de glace", isWin: true, icon: "🍨", bg: "#db2777", text: "#ffffff" },
+            { label: "Une pizza moyenne", wheelLabel: "Pizza moyenne", isWin: true, icon: "🍕", bg: "#b91c1c", text: "#ffffff" },
+            { label: "Un demi poulet au choix", wheelLabel: "Demi poulet au choix", isWin: true, icon: "🍗", bg: "#C81D11", text: "#ffffff" },
+            { label: "Une canette non alcoolisée", wheelLabel: "Canette sans alcool", isWin: true, icon: "🥤", bg: "#059669", text: "#ffffff" }
         ];
 
         const LOSE_STYLES = [
@@ -276,7 +276,8 @@
                 ctx.shadowBlur = 3;
 
                 const textRadius = Math.max(12, radius - 14);
-                ctx.fillText(`${seg.label} ${seg.icon}`, textRadius, 0);
+                const wheelLabel = seg.wheelLabel || seg.label;
+                ctx.fillText(`${wheelLabel} ${seg.icon}`, textRadius, 0, Math.max(48, radius * 0.68));
 
                 ctx.restore();
             }
