@@ -12,7 +12,8 @@ const WINNING_PRIZES = [
   { label: "Une boule de glace", wheelLabel: "Boule de glace", isWin: true, icon: "🍨", bg: "#db2777", text: "#ffffff" },
   { label: "Une pizza moyenne", wheelLabel: "Pizza moyenne", isWin: true, icon: "🍕", bg: "#b91c1c", text: "#ffffff" },
   { label: "Un demi poulet au choix", wheelLabel: "Demi poulet au choix", isWin: true, icon: "🍗", bg: "#C81D11", text: "#ffffff" },
-  { label: "Une canette non alcoolisée", wheelLabel: "Canette sans alcool", isWin: true, icon: "🥤", bg: "#059669", text: "#ffffff" }
+  { label: "Une canette non alcoolisée", wheelLabel: "Canette sans alcool", isWin: true, icon: "🥤", bg: "#059669", text: "#ffffff" },
+  { label: "Un Fresco", wheelLabel: "Fresco", isWin: true, icon: "🧃", bg: "#0ea5e9", text: "#ffffff" }
 ];
 
 const LOSE_STYLES = [
@@ -30,7 +31,7 @@ function shuffleSecure(values) {
 }
 
 function buildSegments() {
-  const losingSectors = Array.from({ length: 7 }, (_, index) => ({
+  const losingSectors = Array.from({ length: 10 }, (_, index) => ({
     ...LOSE_STYLES[index % LOSE_STYLES.length]
   }));
   return shuffleSecure([
