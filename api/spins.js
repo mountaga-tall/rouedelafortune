@@ -1,14 +1,20 @@
-import { randomInt } from "node:crypto";
+import { randomInt, randomUUID } from "node:crypto";
 import { ensureSchema, getSql } from "../lib/server/db.js";
 import { getCustomerId } from "../lib/server/auth.js";
 import { json, methodNotAllowed, originAllowed, readJson } from "../lib/server/http.js";
 
+const MIN_SPINS_BETWEEN_PRIZES = 50;
+
 const WINNING_PRIZES = [
-  { label: "Un fresco", isWin: true, icon: "🥤", bg: "#059669", text: "#ffffff" },
-  { label: "Une portion de frite", isWin: true, icon: "🍟", bg: "#d97706", text: "#ffffff" },
-  { label: "Un demi poulet rôti", isWin: true, icon: "🍗", bg: "#C81D11", text: "#ffffff" },
-  { label: "Un chawarma", isWin: true, icon: "🌯", bg: "#7c3aed", text: "#ffffff" }
+  { label: "Un plat de frites", isWin: true, icon: "🍟", bg: "#d97706", text: "#ffffff" },
+  { label: "Une petite bouteille d'eau", isWin: true, icon: "💧", bg: "#0284c7", text: "#ffffff" },
+  { label: "Un chawarma", isWin: true, icon: "🌯", bg: "#7c3aed", text: "#ffffff" },
+  { label: "Une boule de glace", isWin: true, icon: "🍨", bg: "#db2777", text: "#ffffff" },
+  { label: "Une pizza moyenne", isWin: true, icon: "🍕", bg: "#b91c1c", text: "#ffffff" },
+  { label: "Un demi poulet au choix", isWin: true, icon: "🍗", bg: "#C81D11", text: "#ffffff" },
+  { label: "Une canette non alcoolisée", isWin: true, icon: "🥤", bg: "#059669", text: "#ffffff" }
 ];
+
 const LOSE_STYLES = [
   { label: "Pas de chance", isWin: false, icon: "🍀", bg: "#1c1917", text: "#e7e5e4" },
   { label: "Pas de chance", isWin: false, icon: "🎲", bg: "#292524", text: "#d6d3d1" }
@@ -24,27 +30,13 @@ function shuffleSecure(values) {
 }
 
 function buildSegments() {
-  const totalSlots = 14;
-  const shuffledPrizes = shuffleSecure(WINNING_PRIZES);
-  const positions = [0, 3, 7, 10];
-  const shift = randomInt(totalSlots);
-  const winners = new Map();
-
-  positions.forEach((position, index) => {
-    winners.set((position + shift) % totalSlots, shuffledPrizes[index]);
-  });
-
-  const segments = [];
-  let loseCounter = 0;
-  for (let i = 0; i < totalSlots; i++) {
-    if (winners.has(i)) {
-      segments.push(winners.get(i));
-    } else {
-      segments.push({ ...LOSE_STYLES[loseCounter % LOSE_STYLES.length] });
-      loseCounter++;
-    }
-  }
-  return segments;
+  const losingSectors = Array.from({ length: 7 }, (_, index) => ({
+    ...LOSE_STYLES[index % LOSE_STYLES.length]
+  }));
+  return shuffleSecure([
+    ...WINNING_PRIZES.map(prize => ({ ...prize })),
+    ...losingSectors
+  ]);
 }
 
 function makeValidationCode() {
@@ -64,7 +56,6 @@ export default async function handler(req, res) {
     const sql = getSql();
 
     if (body.action === "start") {
-      // Un seul tirage peut être lancé toutes les six secondes pour éviter les relances abusives.
       const lock = await sql`
         UPDATE customers
         SET last_spin_started_at = NOW(), last_seen_at = NOW()
@@ -76,36 +67,80 @@ export default async function handler(req, res) {
         return json(res, 429, { error: "Patientez quelques secondes avant de relancer la roue." });
       }
 
+      // Ferme un ancien tirage inachevé de ce joueur et libère son éventuel lot réservé.
       await sql`
-        UPDATE spin_challenges
-        SET completed_at = NOW()
-        WHERE customer_id = ${customerId}::uuid AND completed_at IS NULL
+        WITH closed AS (
+          UPDATE spin_challenges
+          SET completed_at = NOW()
+          WHERE customer_id = ${customerId}::uuid AND completed_at IS NULL
+          RETURNING id
+        )
+        UPDATE game_state
+        SET pending_winning_challenge = NULL,
+            pending_winning_expires_at = NULL,
+            updated_at = NOW()
+        WHERE id = 1
+          AND pending_winning_challenge IN (SELECT id FROM closed)
       `;
 
+      const challengeId = randomUUID();
+      // Le compteur est global à tous les clients. À 50, un seul lot est réservé.
+      // Si le joueur abandonne, le lot reste disponible après expiration de sa réservation.
+      const stateRows = await sql`
+        UPDATE game_state
+        SET total_spins = total_spins + 1,
+            spins_since_last_win = LEAST(spins_since_last_win + 1, ${MIN_SPINS_BETWEEN_PRIZES}),
+            pending_winning_challenge = CASE
+              WHEN spins_since_last_win >= ${MIN_SPINS_BETWEEN_PRIZES - 1}
+                AND (pending_winning_challenge IS NULL OR pending_winning_expires_at <= NOW())
+              THEN ${challengeId}::uuid
+              ELSE pending_winning_challenge
+            END,
+            pending_winning_expires_at = CASE
+              WHEN spins_since_last_win >= ${MIN_SPINS_BETWEEN_PRIZES - 1}
+                AND (pending_winning_challenge IS NULL OR pending_winning_expires_at <= NOW())
+              THEN NOW() + INTERVAL '5 minutes'
+              ELSE pending_winning_expires_at
+            END,
+            updated_at = NOW()
+        WHERE id = 1
+        RETURNING total_spins, spins_since_last_win, pending_winning_challenge
+      `;
+      if (!stateRows.length) throw new Error("Compteur global du jeu introuvable.");
+
+      const state = stateRows[0];
+      const spinNumber = Number(state.total_spins);
+      const isWinningTurn = String(state.pending_winning_challenge || "") === challengeId;
       const segments = buildSegments();
-      const targetIndex = randomInt(segments.length);
+      const eligibleIndices = [];
+      segments.forEach((segment, index) => {
+        if (Boolean(segment.isWin) === isWinningTurn) eligibleIndices.push(index);
+      });
+      const targetIndex = eligibleIndices[randomInt(eligibleIndices.length)];
       const selected = segments[targetIndex];
-      const rows = await sql`
+
+      const inserted = await sql`
         INSERT INTO spin_challenges (
-          customer_id, segments, target_index, prize_label, prize_icon, is_win
+          id, customer_id, segments, target_index, prize_label, prize_icon,
+          is_win, spin_number
         )
         VALUES (
-          ${customerId}::uuid,
-          ${JSON.stringify(segments)}::jsonb,
-          ${targetIndex},
-          ${selected.label},
-          ${selected.icon},
-          ${selected.isWin}
+          ${challengeId}::uuid, ${customerId}::uuid, ${JSON.stringify(segments)}::jsonb,
+          ${targetIndex}, ${selected.label}, ${selected.icon},
+          ${isWinningTurn}, ${spinNumber}
         )
-        RETURNING id, expires_at
+        RETURNING expires_at
       `;
 
       return json(res, 201, {
         ok: true,
-        challengeId: rows[0].id,
+        challengeId,
         segments,
         targetIndex,
-        expiresAt: rows[0].expires_at
+        spinNumber,
+        prizeInterval: MIN_SPINS_BETWEEN_PRIZES,
+        isWinningTurn,
+        expiresAt: inserted[0].expires_at
       });
     }
 
@@ -116,7 +151,7 @@ export default async function handler(req, res) {
       }
 
       const validationCode = makeValidationCode();
-      // Le challenge n'est consommé qu'une seule fois et uniquement après le délai minimal d'animation.
+      // Le lot réservé est validé une seule fois, avec le compteur remis à zéro dans la même requête SQL.
       const rows = await sql`
         WITH claimed AS (
           UPDATE spin_challenges
@@ -126,17 +161,43 @@ export default async function handler(req, res) {
             AND completed_at IS NULL
             AND expires_at > NOW()
             AND created_at <= NOW() - INTERVAL '4.5 seconds'
-          RETURNING customer_id, prize_label, prize_icon, is_win
+            AND (
+              is_win = FALSE
+              OR EXISTS (
+                SELECT 1 FROM game_state
+                WHERE id = 1
+                  AND pending_winning_challenge = ${challengeId}::uuid
+                  AND pending_winning_expires_at > NOW()
+              )
+            )
+          RETURNING customer_id, prize_label, prize_icon, is_win, target_index, spin_number
+        ),
+        inserted AS (
+          INSERT INTO spins (
+            customer_id, prize_label, prize_icon, is_win, validation_code, spin_number
+          )
+          SELECT customer_id, prize_label, prize_icon, is_win,
+                 CASE WHEN is_win THEN ${validationCode} ELSE NULL END,
+                 spin_number
+          FROM claimed
+          RETURNING id, played_at, prize_label, prize_icon, is_win, validation_code, spin_number
+        ),
+        released AS (
+          UPDATE game_state
+          SET spins_since_last_win = 0,
+              pending_winning_challenge = NULL,
+              pending_winning_expires_at = NULL,
+              updated_at = NOW()
+          WHERE id = 1 AND EXISTS (SELECT 1 FROM inserted WHERE is_win = TRUE)
+          RETURNING id
         )
-        INSERT INTO spins (customer_id, prize_label, prize_icon, is_win, validation_code)
-        SELECT customer_id, prize_label, prize_icon, is_win,
-               CASE WHEN is_win THEN ${validationCode} ELSE NULL END
-        FROM claimed
-        RETURNING id, played_at, prize_label, prize_icon, is_win, validation_code
+        SELECT inserted.*, claimed.target_index
+        FROM inserted
+        INNER JOIN claimed ON claimed.spin_number = inserted.spin_number
       `;
 
       if (!rows.length) {
-        return json(res, 409, { error: "Ce tirage a expiré ou a déjà été utilisé. Relancez la roue." });
+        return json(res, 409, { error: "Ce tirage a expiré, a déjà été utilisé ou doit être relancé. Aucun cadeau n'a été validé." });
       }
 
       return json(res, 201, {
@@ -146,6 +207,8 @@ export default async function handler(req, res) {
         icon: rows[0].prize_icon,
         isWin: rows[0].is_win,
         validationCode: rows[0].validation_code,
+        spinNumber: Number(rows[0].spin_number),
+        targetIndex: Number(rows[0].target_index),
         playedAt: rows[0].played_at
       });
     }
