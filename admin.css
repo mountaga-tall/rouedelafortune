@@ -299,3 +299,51 @@ td, th { border-color: rgba(255,255,255,.075); }
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+
+/* EL PATRÓN admin — même langage visuel premium que la roue */
+body {
+    background-attachment: fixed;
+    -webkit-font-smoothing: antialiased;
+}
+.admin-header, .admin-brand img, .admin-back, .login-card, .stat-card, .panel, .prize-rule-banner {
+    -webkit-backdrop-filter: blur(22px) saturate(145%);
+    backdrop-filter: blur(22px) saturate(145%);
+}
+.admin-header {
+    padding: 14px 18px;
+    border: 1px solid rgba(255,255,255,.14);
+    border-radius: 24px;
+    background: linear-gradient(135deg, rgba(255,255,255,.09), rgba(255,255,255,.025));
+    box-shadow: 0 16px 45px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.1);
+}
+.admin-brand img {
+    transition: transform .35s cubic-bezier(.2,.75,.25,1), box-shadow .35s ease;
+}
+.admin-brand img:hover { transform: rotate(-4deg) scale(1.04); box-shadow: 0 0 32px rgba(245,158,11,.32); }
+.login-card, .stat-card, .panel {
+    border: 1px solid rgba(255,255,255,.15) !important;
+    background: linear-gradient(145deg, rgba(255,255,255,.085), rgba(255,255,255,.025) 65%, rgba(200,29,17,.055)) !important;
+    box-shadow: 0 22px 65px rgba(0,0,0,.27), inset 0 1px 0 rgba(255,255,255,.09);
+}
+.stat-card { transition: transform .28s ease, border-color .28s ease, box-shadow .28s ease; }
+.stat-card:hover { transform: translateY(-5px); border-color: rgba(251,191,36,.35) !important; box-shadow: 0 28px 70px rgba(0,0,0,.32), 0 0 24px rgba(245,158,11,.09); }
+.panel { overflow: hidden; }
+.panel-heading { background: linear-gradient(90deg, rgba(255,255,255,.045), transparent); border-bottom: 1px solid rgba(255,255,255,.08); }
+.prize-rule-banner {
+    border-color: rgba(251,191,36,.28);
+    background: linear-gradient(120deg, rgba(245,158,11,.11), rgba(255,255,255,.035));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 12px 32px rgba(0,0,0,.16);
+}
+.admin-back, .button-secondary, .button-logout, .login-card button, .search-form button {
+    transition: transform .24s ease, box-shadow .24s ease, border-color .24s ease, background .24s ease;
+}
+.login-card button:hover, .search-form button:hover, .button-secondary:hover, .button-logout:hover {
+    box-shadow: 0 10px 28px rgba(200,29,17,.2), 0 0 18px rgba(245,158,11,.08);
+}
+.table-wrap { scrollbar-color: rgba(200,29,17,.7) rgba(255,255,255,.04); }
+tbody tr { transition: background .2s ease; }
+tbody tr:hover { background: rgba(255,255,255,.035); }
+@media (prefers-reduced-motion: reduce) {
+    .stat-card, .admin-brand img, .admin-back, .button-secondary, .button-logout, .login-card button, .search-form button { transition: none !important; }
+}
