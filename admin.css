@@ -99,3 +99,26 @@ td small { display: block; margin-top: 3px; color: var(--muted); }
     .search-form { width: 100%; }
     .login-card { margin-top: 5vh; padding: 23px; }
 }
+
+.prize-rule-banner {
+    margin: 10px 0 18px;
+    padding: 14px 16px;
+    border: 1px solid rgba(251, 191, 36, .25);
+    border-left: 3px solid #fbbf24;
+    border-radius: 12px;
+    color: #f5e7c0;
+    background: rgba(245, 158, 11, .07);
+    font-size: 12px;
+    line-height: 1.6;
+}
+.prize-rule-banner strong { color: #fcd77a; }
+.stats-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 900px) {
+    .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+    .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 420px) {
+    .stats-grid { grid-template-columns: 1fr; }
+}
