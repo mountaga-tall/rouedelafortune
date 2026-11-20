@@ -31,8 +31,8 @@
         });
 
         /**
-         * RÉPARTITION ALÉATOIRE DES 18 SEGMENTS
-         * 8 cadeaux et 10 secteurs "Pas de chance", mélangés à chaque tirage.
+         * RÉPARTITION ÉQUILIBRÉE DES 18 SECTEURS
+         * Les 10 cases "Pas de chance" sont espacées au mieux entre les 8 cadeaux.
          */
         const WINNING_PRIZES = [
             { label: "Un plat de frites", wheelLabel: "Plat de frites", isWin: true, icon: "🍟", bg: "#d97706", text: "#ffffff" },
@@ -60,13 +60,33 @@
         }
 
         function buildBalancedRandomSegments() {
-            const losingSectors = Array.from({ length: 10 }, (_, index) => ({
+            const orderedPrizes = shuffleArray(WINNING_PRIZES.map(prize => ({ ...prize })));
+            const losingSectors = shuffleArray(Array.from({ length: 10 }, (_, index) => ({
                 ...LOSE_STYLES[index % LOSE_STYLES.length]
-            }));
-            return shuffleArray([
-                ...WINNING_PRIZES.map(prize => ({ ...prize })),
-                ...losingSectors
-            ]);
+            })));
+
+            // Répartit les cases perdantes entre les cadeaux. Avec 10 pertes et 8 cadeaux,
+            // six intervalles contiennent une perte et deux intervalles en contiennent deux.
+            const lossesPerGap = Math.floor(losingSectors.length / orderedPrizes.length);
+            const extraLossGaps = losingSectors.length % orderedPrizes.length;
+            const gapOffset = Math.floor(Math.random() * orderedPrizes.length);
+            const extraGapIndexes = new Set(
+                Array.from({ length: extraLossGaps }, (_, index) =>
+                    (gapOffset + Math.floor(index * orderedPrizes.length / extraLossGaps)) % orderedPrizes.length
+                )
+            );
+
+            const segments = [];
+            let losingIndex = 0;
+            orderedPrizes.forEach((prize, index) => {
+                segments.push(prize);
+                const gapSize = lossesPerGap + (extraGapIndexes.has(index) ? 1 : 0);
+                for (let count = 0; count < gapSize; count++) {
+                    segments.push(losingSectors[losingIndex++]);
+                }
+            });
+
+            return segments;
         }
 
         let SEGMENTS = buildBalancedRandomSegments();
