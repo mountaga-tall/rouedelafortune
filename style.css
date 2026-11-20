@@ -34,20 +34,6 @@
         .ambient-backdrop::after { inset: -15%; opacity: .55; filter: blur(55px); animation-duration: 48s; animation-direction: reverse; }
         @keyframes ambientDrift { to { transform: rotate(360deg); } }
 
-        .brand-logo-frame {
-            position: relative; width: 3.5rem; height: 3.5rem; flex: 0 0 auto;
-            display: grid; place-items: center; padding: .22rem; overflow: hidden;
-            border-radius: 1.1rem; background: linear-gradient(145deg, #fff 0%, #f8fafc 72%, #fef3c7 100%);
-            border: 2px solid rgba(251, 191, 36, .9);
-            box-shadow: 0 0 0 3px rgba(200, 29, 17, .22), 0 0 26px rgba(245, 158, 11, .28), 0 8px 24px rgba(0, 0, 0, .4);
-            animation: brandLogoGlow 3.4s ease-in-out infinite;
-        }
-        .brand-logo-frame img { width: 100%; height: 100%; object-fit: contain; border-radius: .75rem; }
-        @keyframes brandLogoGlow {
-            0%, 100% { box-shadow: 0 0 0 3px rgba(200, 29, 17, .22), 0 0 22px rgba(245, 158, 11, .22), 0 8px 24px rgba(0, 0, 0, .4); }
-            50% { box-shadow: 0 0 0 5px rgba(200, 29, 17, .15), 0 0 34px rgba(245, 158, 11, .42), 0 10px 30px rgba(0, 0, 0, .5); }
-        }
-
         .wheel-stage { isolation: isolate; filter: drop-shadow(0 12px 30px rgba(0, 0, 0, .35)); }
         .wheel-stage::before {
             content: ""; position: absolute; inset: -11px; z-index: -1; border-radius: 50%;
@@ -88,11 +74,6 @@
             border-radius: 1.1rem; background: #fff; border: 2px solid #fbbf24;
             box-shadow: 0 0 28px rgba(245, 158, 11, .28), 0 6px 18px rgba(0, 0, 0, .35);
         }
-        @media (prefers-reduced-motion: reduce) {
-            .ambient-backdrop::before, .ambient-backdrop::after, .brand-logo-frame,
-            .wheel-stage::before, .wheel-stage::after { animation: none !important; }
-        }
-
         /* Halo lumineux rouge et or derrière la roue */
         .wheel-glow {
             box-shadow:
@@ -338,13 +319,8 @@ body > header {
     -webkit-backdrop-filter: blur(22px) saturate(145%);
     animation: patronRiseIn .72s cubic-bezier(.2,.8,.2,1) both;
 }
-.brand-logo-frame {
-    border-color: rgba(255, 225, 145, .98);
-    box-shadow: 0 0 0 4px rgba(200,29,17,.18), 0 0 34px rgba(245,158,11,.36), 0 12px 30px rgba(0,0,0,.48);
-}
 body > header h1 { text-shadow: 0 3px 24px rgba(255,255,255,.12); }
-body > header button,
-body > header label {
+body > header button {
     border-color: rgba(255,255,255,.20) !important;
     background: linear-gradient(145deg, rgba(255,255,255,.13), rgba(255,255,255,.035)) !important;
     box-shadow: inset 0 1px 0 rgba(255,255,255,.16), 0 8px 22px rgba(0,0,0,.18);
@@ -352,8 +328,7 @@ body > header label {
     -webkit-backdrop-filter: blur(14px);
     transition: transform .22s ease, border-color .22s ease, background .22s ease, box-shadow .22s ease;
 }
-body > header button:hover,
-body > header label:hover {
+body > header button:hover {
     transform: translateY(-3px);
     border-color: rgba(255,221,143,.65) !important;
     background: linear-gradient(145deg, rgba(255,255,255,.20), rgba(200,29,17,.16)) !important;
@@ -849,7 +824,6 @@ main > div.mt-4 span:hover {
 #gameStatus { min-height: 1.5rem; text-shadow: 0 2px 12px rgba(0,0,0,.5); }
 @keyframes resultBackdropIn { from { opacity: 0; } to { opacity: 1; } }
 @media (hover: hover) {
-    .brand-logo-frame:hover { transform: translateY(-2px) rotate(-2deg); }
     #closeModalBtn:hover { box-shadow: 0 12px 30px rgba(200,29,17,.28), 0 0 24px rgba(245,158,11,.16); }
 }
 @media (max-width: 640px) {
