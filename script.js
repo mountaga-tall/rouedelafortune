@@ -535,20 +535,33 @@
 
             resultModal.classList.remove('hidden');
             resultModal.classList.add('flex');
+            // Rejoue l'entrée premium à chaque résultat, pas seulement au premier tour.
+            const resultCard = document.getElementById('resultCard');
+            resultCard.classList.remove('modal-enter');
+            void resultCard.offsetWidth;
+            resultCard.classList.add('modal-enter');
         }
 
-                function launchConfetti() {
+        function launchConfetti() {
             if (typeof confetti === 'function') {
+                const palette = ['#C81D11', '#fbbf24', '#10b981', '#ffffff'];
                 confetti({
-                    particleCount: 95,
-                    spread: 75,
-                    origin: { y: 0.6 },
-                    colors: ['#C81D11', '#fbbf24', '#10b981', '#ffffff']
+                    particleCount: 150,
+                    spread: 92,
+                    startVelocity: 48,
+                    gravity: .9,
+                    scalar: 1.08,
+                    origin: { y: 0.58 },
+                    colors: palette,
+                    ticks: 230
                 });
                 setTimeout(() => {
-                    confetti({ particleCount: 50, angle: 60, spread: 55, origin: { x: 0 } });
-                    confetti({ particleCount: 50, angle: 120, spread: 55, origin: { x: 1 } });
-                }, 250);
+                    confetti({ particleCount: 75, angle: 58, spread: 68, startVelocity: 42, origin: { x: 0, y: .68 }, colors: palette });
+                    confetti({ particleCount: 75, angle: 122, spread: 68, startVelocity: 42, origin: { x: 1, y: .68 }, colors: palette });
+                }, 220);
+                setTimeout(() => {
+                    confetti({ particleCount: 55, spread: 110, startVelocity: 34, origin: { x: .5, y: .35 }, colors: palette, scalar: .85 });
+                }, 620);
             }
         }
 
