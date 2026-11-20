@@ -1,34 +1,17 @@
-/**
-         * GESTION DU LOGO CENTRAL EL PATRÓN
-         * Tente de charger "LOGO EL PATRON ROUGE.png" s'il est dans le même dossier,
-         * et affiche par défaut le logo vectoriel haute fidélité EL PATRÓN.
-         */
-        const hubLogoImg = document.getElementById('hubLogoImg');
-        const hubLogoSvg = document.getElementById('hubLogoSvg');
-        const customLogoInput = document.getElementById('customLogoInput');
+// Logo central : conserve le PNG si disponible, sinon affiche le logo vectoriel.
+const hubLogoImg = document.getElementById("hubLogoImg");
+const hubLogoSvg = document.getElementById("hubLogoSvg");
 
-        hubLogoImg.addEventListener('load', () => {
-            if (hubLogoImg.naturalWidth > 0) {
-                hubLogoImg.classList.remove('hidden');
-                hubLogoSvg.classList.add('hidden');
-            }
-        });
+function updateHubLogo() {
+    const imageLoaded = hubLogoImg.complete && hubLogoImg.naturalWidth > 0;
+    hubLogoImg.classList.toggle("hidden", !imageLoaded);
+    hubLogoSvg.classList.toggle("hidden", imageLoaded);
+}
 
-        hubLogoImg.addEventListener('error', () => {
-            hubLogoImg.classList.add('hidden');
-            hubLogoSvg.classList.remove('hidden');
-        });
+hubLogoImg.addEventListener("load", updateHubLogo);
+hubLogoImg.addEventListener("error", updateHubLogo);
+updateHubLogo();
 
-        // Permet à l'utilisateur de charger son fichier PNG local à tout moment
-        customLogoInput.addEventListener('change', (e) => {
-            const file = e.target.files && e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                hubLogoImg.src = ev.target.result;
-            };
-            reader.readAsDataURL(file);
-        });
 
         /**
          * RÉPARTITION ÉQUILIBRÉE DES 32 SECTEURS
