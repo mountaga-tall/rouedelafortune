@@ -422,7 +422,12 @@ body > main::before {
     border-color: rgba(255,226,157,.92) !important;
     box-shadow: 0 0 0 5px rgba(255,255,255,.045), 0 0 48px rgba(200,29,17,.35), 0 0 76px rgba(245,158,11,.16), inset 0 0 30px rgba(0,0,0,.7) !important;
 }
-#wheelCanvas { filter: saturate(1.12) contrast(1.04); }
+#wheelCanvas {
+    transform-origin: 50% 50%;
+    will-change: transform;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
 #wheelPointer { filter: drop-shadow(0 7px 12px rgba(0,0,0,.78)) drop-shadow(0 0 9px rgba(255,219,130,.35)); }
 #spinCenterBtn {
     border-color: #ffe29a !important;

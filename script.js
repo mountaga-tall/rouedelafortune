@@ -31,8 +31,8 @@
         });
 
         /**
-         * RÉPARTITION ALÉATOIRE DES 18 SEGMENTS
-         * 8 cadeaux et 10 secteurs "Pas de chance", mélangés à chaque tirage.
+         * RÉPARTITION ÉQUILIBRÉE DES 32 SECTEURS
+         * 8 cadeaux et exactement 3 cases "Pas de chance" entre chaque cadeau.
          */
         const WINNING_PRIZES = [
             { label: "Un plat de frites", wheelLabel: "Plat de frites", isWin: true, icon: "🍟", bg: "#d97706", text: "#ffffff" },
@@ -60,13 +60,26 @@
         }
 
         function buildBalancedRandomSegments() {
-            const losingSectors = Array.from({ length: 10 }, (_, index) => ({
-                ...LOSE_STYLES[index % LOSE_STYLES.length]
+            const orderedPrizes = shuffleArray(WINNING_PRIZES.map(prize => ({ ...prize })));
+            // Alterne dé et trèfle sur toutes les cases perdantes, sans répétition consécutive.
+            const firstLosingStyle = Math.floor(Math.random() * LOSE_STYLES.length);
+            const losingSectors = Array.from({ length: 24 }, (_, index) => ({
+                ...LOSE_STYLES[(firstLosingStyle + index) % LOSE_STYLES.length]
             }));
-            return shuffleArray([
-                ...WINNING_PRIZES.map(prize => ({ ...prize })),
-                ...losingSectors
-            ]);
+
+            // 3 cases « Pas de chance » sont placées après chacun des 8 cadeaux.
+            const segments = [];
+            let losingIndex = 0;
+            orderedPrizes.forEach(prize => {
+                segments.push(prize);
+                segments.push(
+                    losingSectors[losingIndex++],
+                    losingSectors[losingIndex++],
+                    losingSectors[losingIndex++]
+                );
+            });
+
+            return segments;
         }
 
         let SEGMENTS = buildBalancedRandomSegments();
@@ -113,7 +126,10 @@
         let isSpinning = false;
         let soundEnabled = true;
         let audioCtx = null;
+        let pointerBounceAnimation = null;
         let lastSegmentIndex = -1;
+        let lastTickAt = 0;
+        let lastPointerBounceAt = 0;
         let spinHistory = [];
         let resetConfirmTimeout = null;
         let resetArmed = false;
@@ -217,35 +233,51 @@
         }
 
         /**
-         * DESSIN DU CANVAS AVEC PROTECTION CONTRE LES DIMENSIONS NULLES (ResizeObserver)
+         * RENDU HD OPTIMISÉ
+         * La roue est dessinée une seule fois à haute résolution. Pendant le tirage,
+         * seul le canvas est tourné par le GPU : aucun redessin lourd à chaque image.
          */
+        const MAX_WHEEL_DPR = 2.5;
+
         function resizeAndDrawWheel() {
             const container = canvas.parentElement;
             if (!container) return;
+
             const rect = container.getBoundingClientRect();
             if (rect.width <= 0 || rect.height <= 0) return;
 
-            const dpr = window.devicePixelRatio || 1;
-            canvas.width = Math.round(rect.width * dpr);
-            canvas.height = Math.round(rect.height * dpr);
+            // Résolution Retina nette sans créer un canvas démesuré sur les téléphones.
+            const dpr = Math.min(window.devicePixelRatio || 1, MAX_WHEEL_DPR);
+            const pixelWidth = Math.max(1, Math.round(rect.width * dpr));
+            const pixelHeight = Math.max(1, Math.round(rect.height * dpr));
 
-            ctx.save();
-            ctx.scale(dpr, dpr);
+            if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
+                canvas.width = pixelWidth;
+                canvas.height = pixelHeight;
+            }
+
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = "high";
+
+            // Dessin statique à zéro degré : les secteurs ne sont pas recalculés pendant le spin.
             drawWheel(rect.width, rect.height);
-            ctx.restore();
+            canvas.style.transform = `rotate(${currentRotation}rad)`;
         }
 
         function drawWheel(width, height) {
             if (width <= 0 || height <= 0) return;
+
             const centerX = width / 2;
             const centerY = height / 2;
             const radius = Math.max(10, Math.min(centerX, centerY) - 4);
+            const fontSize = Math.max(9.5, Math.min(14, width * 0.028));
 
             ctx.clearRect(0, 0, width, height);
 
             for (let i = 0; i < NUM_SEGMENTS; i++) {
                 const seg = SEGMENTS[i];
-                const startAngle = currentRotation + i * ARC_ANGLE - Math.PI / 2;
+                const startAngle = i * ARC_ANGLE - Math.PI / 2;
                 const endAngle = startAngle + ARC_ANGLE;
 
                 ctx.beginPath();
@@ -260,7 +292,7 @@
                 ctx.strokeStyle = seg.isWin ? "#fde047" : "rgba(255, 255, 255, 0.22)";
                 ctx.stroke();
 
-                // Libellé et icône dans chaque secteur
+                // Libellé et icône de chaque secteur, peints une seule fois.
                 ctx.save();
                 ctx.translate(centerX, centerY);
                 ctx.rotate(startAngle + ARC_ANGLE / 2);
@@ -268,10 +300,7 @@
                 ctx.textAlign = "right";
                 ctx.textBaseline = "middle";
                 ctx.fillStyle = seg.text;
-
-                const fontSize = Math.max(9.5, Math.min(14, width * 0.028));
-                ctx.font = `${seg.isWin ? '800' : '600'} ${fontSize}px Outfit, sans-serif`;
-
+                ctx.font = `${seg.isWin ? "800" : "600"} ${fontSize}px Outfit, sans-serif`;
                 ctx.shadowColor = "rgba(0,0,0,0.7)";
                 ctx.shadowBlur = 3;
 
@@ -282,9 +311,9 @@
                 ctx.restore();
             }
 
-            // Clous dorés sur le pourtour
+            // Clous dorés sur le pourtour, eux aussi dessinés une seule fois.
             for (let i = 0; i < NUM_SEGMENTS; i++) {
-                const pinAngle = currentRotation + i * ARC_ANGLE - Math.PI / 2;
+                const pinAngle = i * ARC_ANGLE - Math.PI / 2;
                 const pinRadius = Math.max(6, radius - 7);
                 const pinX = centerX + Math.cos(pinAngle) * pinRadius;
                 const pinY = centerY + Math.sin(pinAngle) * pinRadius;
@@ -338,54 +367,49 @@
                 resizeAndDrawWheel();
 
                 const startRotation = currentRotation;
-                const extraSpins = (6 + Math.random() * 3) * 2 * Math.PI;
+                const extraSpins = (5 + Math.random() * 2) * 2 * Math.PI;
                 const desiredRotation = ((2 * Math.PI - (challenge.targetIndex + 0.5) * ARC_ANGLE) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
                 const currentNormalized = ((startRotation % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
                 const alignmentOffset = (desiredRotation - currentNormalized + 2 * Math.PI) % (2 * Math.PI);
                 const targetRotation = startRotation + extraSpins + alignmentOffset;
 
-                const duration = 4800 + Math.random() * 1000;
+                const duration = 4200 + Math.random() * 600;
                 const startTime = performance.now();
 
-                function easeOutQuint(t) {
-                    return 1 - Math.pow(1 - t, 5);
+                // Décélération progressive : évite l'impression que la roue se bloque en fin de course.
+                function easeOutCubic(t) {
+                    return 1 - Math.pow(1 - t, 3);
                 }
 
                 function animate(now) {
                     const elapsed = now - startTime;
                     const progress = Math.min(elapsed / duration, 1);
-                    const easedProgress = easeOutQuint(progress);
+                    const easedProgress = easeOutCubic(progress);
                     currentRotation = startRotation + (targetRotation - startRotation) * easedProgress;
 
                     const activeIdx = getCurrentSegmentIndex(currentRotation);
                     if (activeIdx !== lastSegmentIndex) {
                         lastSegmentIndex = activeIdx;
-                        playTickSound();
-                        triggerPointerBounce();
+
+                        // Cadence audio et animation du pointeur limitée pour éviter les à-coups.
+                        if (now - lastTickAt >= 34) {
+                            lastTickAt = now;
+                            playTickSound();
+                        }
+                        if (now - lastPointerBounceAt >= 78) {
+                            lastPointerBounceAt = now;
+                            triggerPointerBounce();
+                        }
                     }
 
-                    const rect = canvas.parentElement.getBoundingClientRect();
-                    if (rect.width > 0 && rect.height > 0) {
-                        const dpr = window.devicePixelRatio || 1;
-                        ctx.save();
-                        ctx.scale(dpr, dpr);
-                        drawWheel(rect.width, rect.height);
-                        ctx.restore();
-                    }
+                    canvas.style.transform = `rotate(${currentRotation}rad)`;
 
                     if (progress < 1) {
                         requestAnimationFrame(animate);
                     } else {
-                        // Fixe exactement l'angle final, redessine, puis vérifie la case sous l'aiguille.
+                        // Fixe exactement l'angle final sans redessiner la roue.
                         currentRotation = targetRotation;
-                        const finalRect = canvas.parentElement.getBoundingClientRect();
-                        if (finalRect.width > 0 && finalRect.height > 0) {
-                            const dpr = window.devicePixelRatio || 1;
-                            ctx.save();
-                            ctx.scale(dpr, dpr);
-                            drawWheel(finalRect.width, finalRect.height);
-                            ctx.restore();
-                        }
+                        canvas.style.transform = `rotate(${currentRotation}rad)`;
 
                         const visibleIndex = getCurrentSegmentIndex(currentRotation);
                         if (visibleIndex !== challenge.targetIndex) {
@@ -397,7 +421,18 @@
                             spinCenterBtn.disabled = false;
                             spinCenterBtn.classList.add('hub-pulse');
                             const status = document.getElementById('gameStatus');
-                            if (status) status.textContent = "Le résultat de la roue n'est pas aligné. Aucun gain n'a été enregistré. Réessayez.";
+                            if (status) status.textContent = "";
+
+                            modalBannerGlow.className = "absolute -top-24 left-1/2 -translate-x-1/2 w-64 h-64 rounded-full bg-amber-500/20 blur-3xl pointer-events-none";
+                            modalEmoji.textContent = "⚠️";
+                            modalEmoji.className = "w-20 h-20 mx-auto rounded-3xl bg-amber-500/15 border border-amber-400/40 flex items-center justify-center text-5xl mb-4 shadow-inner";
+                            modalTitle.textContent = "TIRAGE NON VALIDÉ";
+                            modalTitle.className = "font-patron text-3xl sm:text-4xl font-bold text-amber-200 uppercase tracking-wide mb-2";
+                            modalPrizeBox.className = "my-4 py-3.5 px-4 rounded-2xl bg-white/5 border border-amber-400/30";
+                            modalPrizeName.textContent = "Veuillez réessayer";
+                            modalMessage.textContent = "Ce tour n'a pas été validé. Aucun cadeau n'a été enregistré.";
+                            validationTicket.classList.add('hidden');
+                            openResultModal();
                             return;
                         }
 
@@ -419,10 +454,32 @@
             }
         }
 
-                function triggerPointerBounce() {
-            wheelPointer.classList.remove('pointer-animate');
-            void wheelPointer.offsetWidth;
-            wheelPointer.classList.add('pointer-animate');
+        function triggerPointerBounce() {
+            // Web Animations évite de forcer un recalcul du layout à chaque secteur.
+            if (typeof wheelPointer.animate === "function") {
+                if (pointerBounceAnimation) pointerBounceAnimation.cancel();
+
+                pointerBounceAnimation = wheelPointer.animate(
+                    [
+                        { transform: "translateX(-50%) rotate(0deg)" },
+                        { transform: "translateX(-50%) rotate(-24deg)", offset: 0.4 },
+                        { transform: "translateX(-50%) rotate(0deg)" }
+                    ],
+                    {
+                        duration: 120,
+                        easing: "cubic-bezier(0.22, 1, 0.36, 1)"
+                    }
+                );
+
+                pointerBounceAnimation.onfinish = () => {
+                    pointerBounceAnimation = null;
+                };
+                return;
+            }
+
+            // Repli pour les anciens navigateurs, sans lecture synchrone de offsetWidth.
+            wheelPointer.classList.remove("pointer-animate");
+            requestAnimationFrame(() => wheelPointer.classList.add("pointer-animate"));
         }
 
         /**
@@ -502,7 +559,7 @@
                 modalBannerGlow.className = "absolute -top-24 left-1/2 -translate-x-1/2 w-64 h-64 rounded-full bg-emerald-500/30 blur-3xl pointer-events-none";
                 modalEmoji.textContent = segment.icon;
                 modalEmoji.className = "w-20 h-20 mx-auto rounded-3xl bg-emerald-500/20 border border-emerald-400/50 flex items-center justify-center text-5xl mb-4 shadow-inner";
-                modalTitle.textContent = persisted ? "Félicitations ! 🎉" : "Bravo !";
+                modalTitle.textContent = persisted ? "GAGNÉ ! 🎉" : "GAIN À CONFIRMER";
                 modalTitle.className = "font-patron text-3xl sm:text-4xl font-bold text-emerald-300 uppercase tracking-wide mb-2";
 
                 modalPrizeBox.className = "my-4 py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-500/20 via-amber-500/25 to-emerald-500/20 border border-emerald-400/50";
@@ -522,7 +579,7 @@
                 modalBannerGlow.className = "absolute -top-24 left-1/2 -translate-x-1/2 w-64 h-64 rounded-full bg-[#C81D11]/25 blur-3xl pointer-events-none";
                 modalEmoji.textContent = "😊";
                 modalEmoji.className = "w-20 h-20 mx-auto rounded-3xl bg-white/10 border border-white/20 flex items-center justify-center text-5xl mb-4 shadow-inner";
-                modalTitle.textContent = "Pas de chance !";
+                modalTitle.textContent = "PERDU !";
                 modalTitle.className = "font-patron text-3xl sm:text-4xl font-bold text-amber-200 uppercase tracking-wide mb-2";
 
                 modalPrizeBox.className = "my-4 py-3.5 px-4 rounded-2xl bg-white/5 border border-white/15";
@@ -533,13 +590,28 @@
                 validationTicket.classList.add('hidden');
             }
 
+            openResultModal();
+        }
+
+        // Le pop-up s'ouvre automatiquement après chaque tirage : cadeau, perte ou erreur.
+        function openResultModal() {
+            resultModal.setAttribute('aria-hidden', 'false');
             resultModal.classList.remove('hidden');
             resultModal.classList.add('flex');
-            // Rejoue l'entrée premium à chaque résultat, pas seulement au premier tour.
+
+            // Rejoue l'animation premium à chaque tirage et place le focus sur Fermer.
             const resultCard = document.getElementById('resultCard');
             resultCard.classList.remove('modal-enter');
             void resultCard.offsetWidth;
             resultCard.classList.add('modal-enter');
+            closeModalBtn.focus({ preventScroll: true });
+        }
+
+        function closeResultModal() {
+            resultModal.setAttribute('aria-hidden', 'true');
+            resultModal.classList.add('hidden');
+            resultModal.classList.remove('flex');
+            spinMainBtn.focus({ preventScroll: true });
         }
 
         function launchConfetti() {
@@ -617,9 +689,12 @@
         spinCenterBtn.addEventListener('click', spinWheel);
         canvas.addEventListener('click', spinWheel);
 
-        closeModalBtn.addEventListener('click', () => {
-            resultModal.classList.add('hidden');
-            resultModal.classList.remove('flex');
+        closeModalBtn.addEventListener('click', closeResultModal);
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && !resultModal.classList.contains('hidden')) {
+                closeResultModal();
+            }
         });
 
         soundToggleBtn.addEventListener('click', () => {
