@@ -61,9 +61,11 @@
 
         function buildBalancedRandomSegments() {
             const orderedPrizes = shuffleArray(WINNING_PRIZES.map(prize => ({ ...prize })));
-            const losingSectors = shuffleArray(Array.from({ length: 24 }, (_, index) => ({
-                ...LOSE_STYLES[index % LOSE_STYLES.length]
-            })));
+            // Alterne dé et trèfle sur toutes les cases perdantes, sans répétition consécutive.
+            const firstLosingStyle = Math.floor(Math.random() * LOSE_STYLES.length);
+            const losingSectors = Array.from({ length: 24 }, (_, index) => ({
+                ...LOSE_STYLES[(firstLosingStyle + index) % LOSE_STYLES.length]
+            }));
 
             // 3 cases « Pas de chance » sont placées après chacun des 8 cadeaux.
             const segments = [];
