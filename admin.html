@@ -50,11 +50,16 @@
             </div>
 
             <p id="dashboardStatus" class="admin-status" role="status" aria-live="polite"></p>
+            <div class="prize-rule-banner">
+                <strong>Règle des cadeaux :</strong> au minimum 50 tours globaux entre deux gains.
+                Un seul cadeau peut être réservé à la fois ; un tirage abandonné ne libère pas le cadeau avant l'expiration de sa réservation.
+            </div>
 
             <div class="stats-grid">
                 <article class="stat-card"><span>Contacts inscrits</span><strong id="totalCustomers">0</strong></article>
-                <article class="stat-card"><span>Participations</span><strong id="totalSpins">0</strong></article>
-                <article class="stat-card"><span>Cadeaux gagnés</span><strong id="totalWins">0</strong></article>
+                <article class="stat-card"><span>Tours globaux</span><strong id="totalSpins">0</strong></article>
+                <article class="stat-card"><span>Cadeaux attribués</span><strong id="totalWins">0</strong></article>
+                <article class="stat-card"><span>Prochain cadeau</span><strong id="spinsUntilNextPrize">50 tours</strong></article>
             </div>
 
             <section class="panel">
@@ -80,8 +85,8 @@
                 </div>
                 <div class="table-wrap">
                     <table>
-                        <thead><tr><th>Date</th><th>Participant</th><th>Téléphone</th><th>Résultat</th><th>Validation</th></tr></thead>
-                        <tbody id="spinsTable"><tr><td colspan="5" class="empty-cell">Chargement…</td></tr></tbody>
+                        <thead><tr><th>Date</th><th>Tour global</th><th>Participant</th><th>Téléphone</th><th>Résultat</th><th>Validation</th></tr></thead>
+                        <tbody id="spinsTable"><tr><td colspan="6" class="empty-cell">Chargement…</td></tr></tbody>
                     </table>
                 </div>
             </section>
