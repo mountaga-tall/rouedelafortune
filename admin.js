@@ -60,11 +60,12 @@ function renderCustomers(customers) {
 
 function renderSpins(spins) {
   spinsTable.replaceChildren();
-  if (!spins.length) return emptyRow(spinsTable, 5, "Aucune participation pour le moment.");
+  if (!spins.length) return emptyRow(spinsTable, 6, "Aucune participation pour le moment.");
 
   for (const spin of spins) {
     const row = document.createElement("tr");
     cell(row, formatDate(spin.played_at));
+    cell(row, spin.spin_number);
     cell(row, spin.first_name + " " + spin.last_name);
     cell(row, spin.phone);
     const result = document.createElement("td");
@@ -98,8 +99,11 @@ async function loadDashboard() {
 
     latestCustomers = data.customers || [];
     document.getElementById("totalCustomers").textContent = data.totals?.customers ?? 0;
-    document.getElementById("totalSpins").textContent = data.totals?.spins ?? 0;
+    document.getElementById("totalSpins").textContent = data.game?.totalSpins ?? data.totals?.spins ?? 0;
     document.getElementById("totalWins").textContent = data.totals?.wins ?? 0;
+    document.getElementById("spinsUntilNextPrize").textContent = data.game?.prizePending
+      ? "Lot réservé"
+      : `${data.game?.spinsUntilNextPrize ?? 50} tours`;
     renderCustomers(latestCustomers);
     renderSpins(data.recentSpins || []);
     document.getElementById("truncatedNotice").hidden = !data.truncated;
