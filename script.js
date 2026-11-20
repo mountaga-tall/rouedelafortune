@@ -126,6 +126,8 @@
         let audioCtx = null;
         let pointerBounceAnimation = null;
         let lastSegmentIndex = -1;
+        let lastTickAt = 0;
+        let lastPointerBounceAt = 0;
         let spinHistory = [];
         let resetConfirmTimeout = null;
         let resetArmed = false;
@@ -363,30 +365,39 @@
                 resizeAndDrawWheel();
 
                 const startRotation = currentRotation;
-                const extraSpins = (6 + Math.random() * 3) * 2 * Math.PI;
+                const extraSpins = (5 + Math.random() * 2) * 2 * Math.PI;
                 const desiredRotation = ((2 * Math.PI - (challenge.targetIndex + 0.5) * ARC_ANGLE) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
                 const currentNormalized = ((startRotation % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
                 const alignmentOffset = (desiredRotation - currentNormalized + 2 * Math.PI) % (2 * Math.PI);
                 const targetRotation = startRotation + extraSpins + alignmentOffset;
 
-                const duration = 4800 + Math.random() * 1000;
+                const duration = 4200 + Math.random() * 600;
                 const startTime = performance.now();
 
-                function easeOutQuint(t) {
-                    return 1 - Math.pow(1 - t, 5);
+                // Décélération progressive : évite l'impression que la roue se bloque en fin de course.
+                function easeOutCubic(t) {
+                    return 1 - Math.pow(1 - t, 3);
                 }
 
                 function animate(now) {
                     const elapsed = now - startTime;
                     const progress = Math.min(elapsed / duration, 1);
-                    const easedProgress = easeOutQuint(progress);
+                    const easedProgress = easeOutCubic(progress);
                     currentRotation = startRotation + (targetRotation - startRotation) * easedProgress;
 
                     const activeIdx = getCurrentSegmentIndex(currentRotation);
                     if (activeIdx !== lastSegmentIndex) {
                         lastSegmentIndex = activeIdx;
-                        playTickSound();
-                        triggerPointerBounce();
+
+                        // Cadence audio et animation du pointeur limitée pour éviter les à-coups.
+                        if (now - lastTickAt >= 34) {
+                            lastTickAt = now;
+                            playTickSound();
+                        }
+                        if (now - lastPointerBounceAt >= 78) {
+                            lastPointerBounceAt = now;
+                            triggerPointerBounce();
+                        }
                     }
 
                     canvas.style.transform = `rotate(${currentRotation}rad)`;
