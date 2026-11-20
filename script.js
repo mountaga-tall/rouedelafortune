@@ -124,6 +124,7 @@
         let isSpinning = false;
         let soundEnabled = true;
         let audioCtx = null;
+        let pointerBounceAnimation = null;
         let lastSegmentIndex = -1;
         let spinHistory = [];
         let resetConfirmTimeout = null;
@@ -228,35 +229,51 @@
         }
 
         /**
-         * DESSIN DU CANVAS AVEC PROTECTION CONTRE LES DIMENSIONS NULLES (ResizeObserver)
+         * RENDU HD OPTIMISÉ
+         * La roue est dessinée une seule fois à haute résolution. Pendant le tirage,
+         * seul le canvas est tourné par le GPU : aucun redessin lourd à chaque image.
          */
+        const MAX_WHEEL_DPR = 2.5;
+
         function resizeAndDrawWheel() {
             const container = canvas.parentElement;
             if (!container) return;
+
             const rect = container.getBoundingClientRect();
             if (rect.width <= 0 || rect.height <= 0) return;
 
-            const dpr = window.devicePixelRatio || 1;
-            canvas.width = Math.round(rect.width * dpr);
-            canvas.height = Math.round(rect.height * dpr);
+            // Résolution Retina nette sans créer un canvas démesuré sur les téléphones.
+            const dpr = Math.min(window.devicePixelRatio || 1, MAX_WHEEL_DPR);
+            const pixelWidth = Math.max(1, Math.round(rect.width * dpr));
+            const pixelHeight = Math.max(1, Math.round(rect.height * dpr));
 
-            ctx.save();
-            ctx.scale(dpr, dpr);
+            if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
+                canvas.width = pixelWidth;
+                canvas.height = pixelHeight;
+            }
+
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = "high";
+
+            // Dessin statique à zéro degré : les secteurs ne sont pas recalculés pendant le spin.
             drawWheel(rect.width, rect.height);
-            ctx.restore();
+            canvas.style.transform = `rotate(${currentRotation}rad)`;
         }
 
         function drawWheel(width, height) {
             if (width <= 0 || height <= 0) return;
+
             const centerX = width / 2;
             const centerY = height / 2;
             const radius = Math.max(10, Math.min(centerX, centerY) - 4);
+            const fontSize = Math.max(9.5, Math.min(14, width * 0.028));
 
             ctx.clearRect(0, 0, width, height);
 
             for (let i = 0; i < NUM_SEGMENTS; i++) {
                 const seg = SEGMENTS[i];
-                const startAngle = currentRotation + i * ARC_ANGLE - Math.PI / 2;
+                const startAngle = i * ARC_ANGLE - Math.PI / 2;
                 const endAngle = startAngle + ARC_ANGLE;
 
                 ctx.beginPath();
@@ -271,7 +288,7 @@
                 ctx.strokeStyle = seg.isWin ? "#fde047" : "rgba(255, 255, 255, 0.22)";
                 ctx.stroke();
 
-                // Libellé et icône dans chaque secteur
+                // Libellé et icône de chaque secteur, peints une seule fois.
                 ctx.save();
                 ctx.translate(centerX, centerY);
                 ctx.rotate(startAngle + ARC_ANGLE / 2);
@@ -279,10 +296,7 @@
                 ctx.textAlign = "right";
                 ctx.textBaseline = "middle";
                 ctx.fillStyle = seg.text;
-
-                const fontSize = Math.max(9.5, Math.min(14, width * 0.028));
-                ctx.font = `${seg.isWin ? '800' : '600'} ${fontSize}px Outfit, sans-serif`;
-
+                ctx.font = `${seg.isWin ? "800" : "600"} ${fontSize}px Outfit, sans-serif`;
                 ctx.shadowColor = "rgba(0,0,0,0.7)";
                 ctx.shadowBlur = 3;
 
@@ -293,9 +307,9 @@
                 ctx.restore();
             }
 
-            // Clous dorés sur le pourtour
+            // Clous dorés sur le pourtour, eux aussi dessinés une seule fois.
             for (let i = 0; i < NUM_SEGMENTS; i++) {
-                const pinAngle = currentRotation + i * ARC_ANGLE - Math.PI / 2;
+                const pinAngle = i * ARC_ANGLE - Math.PI / 2;
                 const pinRadius = Math.max(6, radius - 7);
                 const pinX = centerX + Math.cos(pinAngle) * pinRadius;
                 const pinY = centerY + Math.sin(pinAngle) * pinRadius;
@@ -375,28 +389,14 @@
                         triggerPointerBounce();
                     }
 
-                    const rect = canvas.parentElement.getBoundingClientRect();
-                    if (rect.width > 0 && rect.height > 0) {
-                        const dpr = window.devicePixelRatio || 1;
-                        ctx.save();
-                        ctx.scale(dpr, dpr);
-                        drawWheel(rect.width, rect.height);
-                        ctx.restore();
-                    }
+                    canvas.style.transform = `rotate(${currentRotation}rad)`;
 
                     if (progress < 1) {
                         requestAnimationFrame(animate);
                     } else {
-                        // Fixe exactement l'angle final, redessine, puis vérifie la case sous l'aiguille.
+                        // Fixe exactement l'angle final sans redessiner la roue.
                         currentRotation = targetRotation;
-                        const finalRect = canvas.parentElement.getBoundingClientRect();
-                        if (finalRect.width > 0 && finalRect.height > 0) {
-                            const dpr = window.devicePixelRatio || 1;
-                            ctx.save();
-                            ctx.scale(dpr, dpr);
-                            drawWheel(finalRect.width, finalRect.height);
-                            ctx.restore();
-                        }
+                        canvas.style.transform = `rotate(${currentRotation}rad)`;
 
                         const visibleIndex = getCurrentSegmentIndex(currentRotation);
                         if (visibleIndex !== challenge.targetIndex) {
@@ -441,10 +441,32 @@
             }
         }
 
-                function triggerPointerBounce() {
-            wheelPointer.classList.remove('pointer-animate');
-            void wheelPointer.offsetWidth;
-            wheelPointer.classList.add('pointer-animate');
+        function triggerPointerBounce() {
+            // Web Animations évite de forcer un recalcul du layout à chaque secteur.
+            if (typeof wheelPointer.animate === "function") {
+                if (pointerBounceAnimation) pointerBounceAnimation.cancel();
+
+                pointerBounceAnimation = wheelPointer.animate(
+                    [
+                        { transform: "translateX(-50%) rotate(0deg)" },
+                        { transform: "translateX(-50%) rotate(-24deg)", offset: 0.4 },
+                        { transform: "translateX(-50%) rotate(0deg)" }
+                    ],
+                    {
+                        duration: 120,
+                        easing: "cubic-bezier(0.22, 1, 0.36, 1)"
+                    }
+                );
+
+                pointerBounceAnimation.onfinish = () => {
+                    pointerBounceAnimation = null;
+                };
+                return;
+            }
+
+            // Repli pour les anciens navigateurs, sans lecture synchrone de offsetWidth.
+            wheelPointer.classList.remove("pointer-animate");
+            requestAnimationFrame(() => wheelPointer.classList.add("pointer-animate"));
         }
 
         /**
