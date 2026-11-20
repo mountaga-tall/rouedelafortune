@@ -32,34 +32,24 @@ function shuffleSecure(values) {
 
 function buildSegments() {
   const orderedPrizes = shuffleSecure(WINNING_PRIZES.map(prize => ({ ...prize })));
-  const losingSectors = shuffleSecure(Array.from({ length: 10 }, (_, index) => ({
+  const losingSectors = shuffleSecure(Array.from({ length: 24 }, (_, index) => ({
     ...LOSE_STYLES[index % LOSE_STYLES.length]
   })));
 
-  // Avec 10 cases perdantes et 8 cadeaux, la répartition la plus régulière est
-  // de six intervalles avec une perte et deux intervalles avec deux pertes.
-  const lossesPerGap = Math.floor(losingSectors.length / orderedPrizes.length);
-  const extraLossGaps = losingSectors.length % orderedPrizes.length;
-  const gapOffset = randomInt(orderedPrizes.length);
-  const extraGapIndexes = new Set(
-    Array.from({ length: extraLossGaps }, (_, index) =>
-      (gapOffset + Math.floor(index * orderedPrizes.length / extraLossGaps)) % orderedPrizes.length
-    )
-  );
-
+  // 3 cases « Pas de chance » entre chacun des 8 cadeaux : 32 secteurs au total.
   const segments = [];
   let losingIndex = 0;
-  orderedPrizes.forEach((prize, index) => {
+  orderedPrizes.forEach(prize => {
     segments.push(prize);
-    const gapSize = lossesPerGap + (extraGapIndexes.has(index) ? 1 : 0);
-    for (let count = 0; count < gapSize; count++) {
-      segments.push(losingSectors[losingIndex++]);
-    }
+    segments.push(
+      losingSectors[losingIndex++],
+      losingSectors[losingIndex++],
+      losingSectors[losingIndex++]
+    );
   });
 
   return segments;
 }
-
 function makeValidationCode() {
   return "#EP-" + randomInt(1000, 10000);
 }
