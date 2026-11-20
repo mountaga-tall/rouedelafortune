@@ -32,9 +32,12 @@ function shuffleSecure(values) {
 
 function buildSegments() {
   const orderedPrizes = shuffleSecure(WINNING_PRIZES.map(prize => ({ ...prize })));
-  const losingSectors = shuffleSecure(Array.from({ length: 24 }, (_, index) => ({
-    ...LOSE_STYLES[index % LOSE_STYLES.length]
-  })));
+  // Les icônes des cases perdantes alternent toujours : dé, trèfle, dé, trèfle...
+  // Le premier symbole varie à chaque tirage, mais deux pertes consécutives ne sont jamais identiques.
+  const firstLosingStyle = randomInt(LOSE_STYLES.length);
+  const losingSectors = Array.from({ length: 24 }, (_, index) => ({
+    ...LOSE_STYLES[(firstLosingStyle + index) % LOSE_STYLES.length]
+  }));
 
   // 3 cases « Pas de chance » entre chacun des 8 cadeaux : 32 secteurs au total.
   const segments = [];
