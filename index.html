@@ -71,30 +71,17 @@
 
     <!-- En-tête aux couleurs EL PATRÓN -->
     <header class="w-full max-w-4xl flex items-center justify-between z-10 mb-2">
-        <div class="flex items-center gap-3">
-            <!-- Logo officiel EL PATRÓN -->
-            <div class="brand-logo-frame">
-                <img src="./LOGO%20EL%20PATRON%20ROUGE.png" alt="Logo officiel EL PATRÓN Restaurant - Café">
-            </div>
-            <div>
-                <h1 class="font-patron text-2xl sm:text-3xl font-bold text-white tracking-wider leading-none uppercase">
-                    EL <span class="text-[#EF4444]">PATRÓN</span>
-                </h1>
-                <p class="text-[11px] sm:text-xs font-bold tracking-[0.22em] text-amber-300/90 uppercase mt-1">
-                    RESTAURANT - CAFÉ • ROUE DE LA FORTUNE
-                </p>
-            </div>
+        <div class="min-w-0">
+            <h1 class="font-patron text-2xl sm:text-3xl font-bold text-white tracking-wider leading-none uppercase">
+                EL <span class="text-[#EF4444]">PATRÓN</span>
+            </h1>
+            <p class="text-[11px] sm:text-xs font-bold tracking-[0.22em] text-amber-300/90 uppercase mt-1">
+                RESTAURANT - CAFÉ • ROUE DE LA FORTUNE
+            </p>
         </div>
 
-        <!-- Boutons d'action rapides : Importer PNG local, Son, Historique -->
+        <!-- Actions rapides : son et historique -->
         <div class="flex items-center gap-2">
-            <!-- Bouton optionnel pour charger le fichier image local LOGO EL PATRON ROUGE.png si souhaité -->
-            <label for="customLogoInput" title="Charger un fichier logo PNG personnalisé" class="p-2.5 sm:p-3 rounded-2xl bg-white/10 hover:bg-white/20 active:scale-95 transition border border-white/15 text-white/90 flex items-center gap-1.5 shadow-md cursor-pointer">
-                <span class="text-base sm:text-lg">🖼️</span>
-                <span class="hidden md:inline text-xs font-semibold uppercase tracking-wider">Logo</span>
-            </label>
-            <input id="customLogoInput" type="file" accept="image/*" class="hidden">
-
             <button id="soundToggleBtn" aria-label="Activer ou couper le son" class="p-2.5 sm:p-3 rounded-2xl bg-white/10 hover:bg-white/20 active:scale-95 transition border border-white/15 text-white flex items-center gap-2 shadow-md cursor-pointer">
                 <span id="soundIcon" class="text-base sm:text-lg">🔊</span>
                 <span id="soundText" class="hidden sm:inline text-xs font-semibold uppercase tracking-wider">Son</span>
@@ -198,7 +185,6 @@
             <span class="px-3 py-1 rounded-full bg-red-500/20 border border-red-400/50 text-red-200 text-xs font-semibold">🍗 Un demi poulet au choix</span>
             <span class="px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/50 text-emerald-200 text-xs font-semibold">🥤 Une canette non alcoolisée</span>
             <span class="px-3 py-1 rounded-full bg-sky-500/20 border border-sky-400/50 text-sky-200 text-xs font-semibold">🧃 Un Fresco</span>
-            
         </div>
     </main>
 
