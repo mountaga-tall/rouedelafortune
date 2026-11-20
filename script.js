@@ -31,9 +31,8 @@
         });
 
         /**
-         * RÉPARTITION ÉQUITABLE ET ALÉATOIRE DES 14 SEGMENTS
-         * 4 lots gagnants répartis uniformément autour de la roue (espacés de 2 à 3 "Pas de chance")
-         * avec ordre des lots mélangé aléatoirement et décalage de départ aléatoire.
+         * RÉPARTITION ALÉATOIRE DES 18 SEGMENTS
+         * 8 cadeaux et 10 secteurs "Pas de chance", mélangés à chaque tirage.
          */
         const WINNING_PRIZES = [
             { label: "Un plat de frites", wheelLabel: "Plat de frites", isWin: true, icon: "🍟", bg: "#d97706", text: "#ffffff" },
@@ -42,7 +41,8 @@
             { label: "Une boule de glace", wheelLabel: "Boule de glace", isWin: true, icon: "🍨", bg: "#db2777", text: "#ffffff" },
             { label: "Une pizza moyenne", wheelLabel: "Pizza moyenne", isWin: true, icon: "🍕", bg: "#b91c1c", text: "#ffffff" },
             { label: "Un demi poulet au choix", wheelLabel: "Demi poulet au choix", isWin: true, icon: "🍗", bg: "#C81D11", text: "#ffffff" },
-            { label: "Une canette non alcoolisée", wheelLabel: "Canette sans alcool", isWin: true, icon: "🥤", bg: "#059669", text: "#ffffff" }
+            { label: "Une canette non alcoolisée", wheelLabel: "Canette sans alcool", isWin: true, icon: "🥤", bg: "#059669", text: "#ffffff" },
+            { label: "Un Fresco", wheelLabel: "Fresco", isWin: true, icon: "🧃", bg: "#0ea5e9", text: "#ffffff" }
         ];
 
         const LOSE_STYLES = [
@@ -60,7 +60,7 @@
         }
 
         function buildBalancedRandomSegments() {
-            const losingSectors = Array.from({ length: 7 }, (_, index) => ({
+            const losingSectors = Array.from({ length: 10 }, (_, index) => ({
                 ...LOSE_STYLES[index % LOSE_STYLES.length]
             }));
             return shuffleArray([
